@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Furniture Manager - Hatimi Hardware</title>
+    <style>
+        :root { --primary-gold: #b38728; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f6; color: #333; }
+
+        .search-container { background: white; padding: 15px 0; display: flex; justify-content: center; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 1000; }
+        .search-box { width: 90%; max-width: 700px; padding: 12px 25px; border: 1.5px solid var(--primary-gold); border-radius: 50px; font-size: 16px; outline: none; }
+
+        .main-wrapper { max-width: 1300px; margin: 20px auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 25px rgba(0,0,0,0.06); }
+        .catalog-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 3px solid var(--primary-gold); margin-bottom: 20px; }
+        .logo-img { height: 80px !important; width: auto; display: block; object-fit: contain; }
+        .brand-name { margin: 0; font-size: 28px; font-weight: 800; color: #b38728; text-transform: uppercase; }
+        
+        .category-header { background: #222; color: #fff; padding: 12px 20px; font-size: 18px; font-weight: 700; text-transform: uppercase; margin-top: 30px; border-left: 8px solid var(--primary-gold); border-radius: 4px; }
+        
+        .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 15px 0; }
+        @media (min-width: 768px) { .product-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (min-width: 1024px) { .product-grid { grid-template-columns: repeat(5, 1fr); gap: 15px; } }
+
+        .product-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; text-align: center; position: relative; transition: all 0.3s ease; display: flex; flex-direction: column; justify-content: space-between; height: 300px; }
+        .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.08); border-color: var(--primary-gold); }
+
+        .img-holder { height: 130px; width: 100%; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; background: #fbfbfb; border-radius: 8px; overflow: hidden; }
+        .img-holder img { max-height: 110px; max-width: 90%; object-fit: contain; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.05)); }
+
+        .product-card div[style*="font-weight:900"] { font-size: 11px !important; letter-spacing: 1px; margin-top: 5px; }
+        .product-card div[style*="font-size:15px"] { font-size: 15px !important; font-weight: 700 !important; color: #1e293b; margin-bottom: 10px; height: 40px; display: flex; align-items: center; justify-content: center; }
+
+        .btn-view { background: var(--primary-gold); color: white; padding: 12px; border-radius: 8px; font-weight: bold; border: none; margin-top: auto; width: 100%; cursor: pointer; text-transform: uppercase; }
+
+        .side-controls { position: fixed; bottom: 30px; right: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 5000; }
+        .ctrl-btn { width: 60px; height: 60px; border-radius: 50%; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-weight: bold; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .btn-logout { background: linear-gradient(135.5deg, #444 0%, #222 100%); color: #fff; border: none; padding: 12px 24px; border-radius: 50px; font-weight: 700; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .btn-add { background: #222; color: white; font-size: 32px; }
+
+        .modal { display: none; position: fixed; z-index: 9999 !important; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; }
+        .modal-content { background: white; width: 95%; max-width: 600px; padding: 25px; border-radius: 15px; position: relative; max-height: 85vh; overflow-y: auto; }
+        .close-modal { position: absolute; right: 15px; top: 10px; font-size: 30px; cursor: pointer; color: #888; z-index: 10001; }
+        
+        .modal-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .modal-table td { vertical-align: middle; padding: 12px 8px; }
+        .action-icon { cursor: pointer; padding: 5px; border-radius: 4px; display: inline-flex; }
+        .edit-icon { color: #b38728; margin-right: 10px; }
+        .delete-row-icon { color: #e74c3c; }
+
+        .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 9998; }
+        #addProductModal { display: none; position: fixed; z-index: 9999; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 440px; background: #ffffff; padding: 30px; border-radius: 16px; }
+        .input-group { margin-bottom: 16px; }
+        .input-group label { display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px; }
+        .input-group input, .input-group select { width: 100%; padding: 12px 16px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14px; box-sizing: border-box; }
+        input[list] { border: 2px solid #f1f5f9; border-radius: 10px; padding: 12px 15px; width: 100%; box-sizing: border-box; }
+
+        .suggestion-container { position: absolute; background: white; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-height: 200px; overflow-y: auto; z-index: 10001; display: none; }
+        .suggestion-item { padding: 10px 15px; cursor: pointer; font-size: 14px; border-bottom: 1px solid #f1f5f9; }
+        .suggestion-item:hover { background-color: #fff9eb; color: #b38728; }
+
+        .toast-msg { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 15px 25px; border-radius: 12px; color: white; font-weight: bold; z-index: 20001; box-shadow: 0 10px 30px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 15px; background: #333; }
+        .undo-link { color: #f1c40f; text-decoration: underline; cursor: pointer; font-weight: 800; text-transform: uppercase; font-size: 13px; }
+        .toast-timer { position: absolute; bottom: 0; left: 0; height: 4px; background: rgba(255,255,255,0.3); width: 100%; border-radius: 0 0 12px 12px; }
+        .toast-progress { height: 100%; background: #f1c40f; width: 100%; animation: shrinkBar 5s linear forwards; }
+        @keyframes shrinkBar { from { width: 100%; } to { width: 0%; } }
+
+        .confirm-modal { display: none; position: fixed; z-index: 20000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); align-items: center; justify-content: center; }
+        .confirm-content { background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; }
+        .btn-confirm { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-yes { background: #e74c3c; color: white; }
+        .btn-no { background: #eee; color: #333; }
+    </style>
+</head>
+<body>
+
+<script>
+    if (sessionStorage.getItem('managerAuth') !== 'true') {
+        const p = prompt("Manager Password:");
+        if (p === "hatimi786") { sessionStorage.setItem('managerAuth', 'true'); }
+        else { window.location.href = "furniture-index.html"; }
+    }
+</script>
+
+<div class="search-container">
+    <input type="text" id="searchInput" class="search-box" placeholder="Search Furniture Inventory..." onkeyup="filterProducts()">
+</div>
+
+<div class="main-wrapper">
+    <header class="catalog-header">
+        <div style="display:flex; align-items:center; gap:15px;">
+            <img src="logo.png" class="logo-img" alt="Logo" onerror="this.src='https://placehold.co/80'">
+            <div>
+                <h1 class="brand-name">Hatimi Hardware</h1>
+                <p style="margin:0; font-weight:bold; color:#666;">Furniture Inventory Control Panel</p>
+            </div>
+        </div>
+        <button onclick="location.reload()" style="background:none; border:none; cursor:pointer; font-size:26px; color:#b38728;">↻</button>
+    </header>
+    <div id="manager-container"></div>
+</div>
+
+<div class="side-controls">
+    <button class="btn-logout" onclick="logout()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        LOGOUT
+    </button>
+    <button class="ctrl-btn btn-add" onclick="toggleAddModal()">+</button>
+    <button id="backToTop" class="ctrl-btn" onclick="scrollToTop()" style="display:none; background:#b38728; color:white;">↑</button>
+</div>
+<div id="modalBackdrop" class="modal-backdrop" onclick="toggleAddModal()"></div>
+
+<div id="addProductModal">
+    <span class="close-modal" onclick="toggleAddModal()">&times;</span>
+    <h3 style="margin-top:0;">Add Furniture Fitting</h3>
+    
+    <form id="addProductForm" onsubmit="handleAddProduct(event)">
+        <div class="input-group">
+            <label>Category</label>
+            <select name="cat" id="newCat" required><option value="">Select Category</option></select>
+        </div>
+        <div class="input-group" style="position: relative;">
+            <label>Brand</label>
+            <input type="text" id="newBrand" placeholder="🔍 Search existing brands..." autocomplete="off" oninput="showSuggestions(this, 'brand')">
+            <div id="brandSuggestions" class="suggestion-container"></div>
+        </div>
+        <div class="input-group" style="position: relative;">
+            <label>Product Name</label>
+            <input type="text" id="newName" placeholder="🔍 Search existing products..." required autocomplete="off" oninput="showSuggestions(this, 'name')">
+            <div id="nameSuggestions" class="suggestion-container"></div>
+        </div>
+        <div class="input-group">
+            <label>Specifications</label>
+            <input type="text" id="newSpecs" placeholder="e.g., 6 inch, 100g, Soft Close" required>
+        </div>
+        <div class="input-group">
+            <label>MRP Price (₹)</label>
+            <input type="number" id="newMrp" placeholder="0.00" required>
+        </div>
+        <div class="input-group" style="background: #f1f5f9; padding: 15px; border-radius: 10px; border: 1px dashed #cbd5e1;">
+            <label style="margin-bottom: 8px;">Product Photo</label>
+            <input type="file" id="new-product-file" accept="image/*">
+        </div>
+        <button type="submit" id="submitBtn" class="btn-view" style="margin-top:10px;">Add to Inventory</button>
+    </form>
+</div>
+
+<div id="priceModal" class="modal" onclick="if(event.target == this) closeAllModals()">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeAllModals()">&times;</span>
+        <h2 id="modalTitle" style="color: var(--primary-gold); margin-top: 10px;"></h2>
+        <p id="modalBrand" style="font-weight: bold; color: #666; margin-bottom: 15px;"></p>
+        <table class="modal-table">
+            <thead>
+                <tr style="text-align:left; border-bottom:2px solid #ddd;">
+                    <th style="padding:10px;">Brand</th>
+                    <th style="padding:10px;">Size / Specs</th>
+                    <th style="padding:10px;">MRP (₹)</th>
+                    <th style="padding:10px; text-align:right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="modalTableBody"></tbody>
+        </table>
+        <button onclick="closeAllModals()" class="btn-view" style="background:#eee; color:#333; margin-top:20px;">CLOSE WINDOW</button>
+    </div>
+</div>
+
+<div id="customConfirmModal" class="confirm-modal">
+    <div class="confirm-content">
+        <div style="font-size: 50px; color: #e74c3c; margin-bottom: 15px;">⚠️</div>
+        <h3 id="confirmTitle" style="margin:0; color:#222;">Are you sure?</h3>
+        <p id="confirmText" style="color:#666; margin:10px 0;"></p>
+        <div style="display: flex; gap: 10px; margin-top: 25px;">
+            <button class="btn-confirm btn-no" onclick="closeConfirm()">Cancel</button>
+            <button id="confirmYesBtn" class="btn-confirm btn-yes">Yes, Delete</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// !!! INSERT YOUR GOOGLE APPS SCRIPT URL HERE !!!
+const webAppUrl = 'https://script.google.com/macros/s/AKfycbwLrnglavUsq7YuD4aLNnVWDOaCYc_S_PqJ6auy9j7pKWg8YfKNYF1qaUnrQLKfeHxH/exec';
+
+let allProducts = [], uniqueBrands = [], uniqueNames = [];
+
+function loadManagerData() {
+    const container = document.getElementById('manager-container');
+    container.innerHTML = "Opening Furniture Inventory...";
+    const script = document.createElement('script');
+    script.src = `${webAppUrl}?callback=handleGoogleResponse&t=${Date.now()}`;
+    script.onerror = () => container.innerHTML = "<p style='color:red;'>Connection Error. Please check WebApp URL.</p>";
+    document.body.appendChild(script);
+}
+
+function handleGoogleResponse(data) {
+    allProducts = data;
+    renderManagerCatalog(allProducts);
+    populateCats(allProducts);
+    populateSuggestions(allProducts);
+}
+
+window.handleSafeEdit = function(encN, encC) { openModal(decodeURIComponent(encN), decodeURIComponent(encC)); };
+
+// --- GLOBAL VARIABLE FOR MODAL ---
+let currentModalData = [];
+
+function renderManagerCatalog(rawProducts) {
+    const container = document.getElementById('manager-container'); 
+    if (!container) return;
+
+    let html = `
+    <div style="margin-bottom: 25px;">
+        <input type="text" id="managerSearch" placeholder="🔍 Search Inventory..." 
+               onkeyup="filterManager()" 
+               style="width: 100%; padding: 14px; font-size: 15px; border: 2px solid #e2e8f0; border-radius: 8px; outline: none; color: #334155; font-weight: bold;">
+    </div>
+    <div id="catalog-blocks">`;
+
+    // 1. FLATTEN THE DATA (Break commas into individual rows)
+    let flatProducts = [];
+    rawProducts.forEach(raw => {
+        const cat = raw.category || raw.cat || "Uncategorized";
+        const brand = raw.brand || "N/A";
+        const name = raw['product name'] || raw.name || "Unnamed";
+        const originalSpecs = raw.specifications || raw.specs || "";
+        const originalMrp = String(raw.mrp || "0");
+        
+        const sizes = originalSpecs.split(/[,，|]+/);
+        const prices = originalMrp.split(/[,，|]+/);
+        
+        sizes.forEach((sz, idx) => {
+            if(!sz.trim()) return;
+            flatProducts.push({
+                cat: cat, brand: brand, name: name, 
+                size: sz.trim(), 
+                price: prices[idx] ? prices[idx].trim() : prices[0].trim()
+            });
+        });
+    });
+
+    // 2. THE SCENARIO GROUPING
+    const grouped = {};
+    flatProducts.forEach(p => {
+        const catLower = String(p.cat).toLowerCase();
+        const isAutoHinge = catLower.includes("auto hinge");
+        
+        // Auto Hinge: Group by Size. Normal: Group by Brand.
+        const cardKey = isAutoHinge ? `${p.name}|SIZE|${p.size}` : `${p.name}|BRAND|${p.brand}`;
+        
+        if (!grouped[p.cat]) grouped[p.cat] = {};
+        if (!grouped[p.cat][cardKey]) grouped[p.cat][cardKey] = [];
+        grouped[p.cat][cardKey].push(p);
+    });
+
+    // 3. BUILD THE CARDS
+    for (const cat in grouped) {
+        html += `
+        <div class="category-header" style="background: #222; color: white; padding: 12px 20px; margin-top: 35px; margin-bottom: 20px; border-radius: 4px; border-left: 8px solid #b38728;">
+            <h2 style="margin: 0; font-size: 16px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">${cat}</h2>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px;">`;
+        for (const cardKey in grouped[cat]) {
+            const items = grouped[cat][cardKey];
+            const isAutoHinge = cardKey.includes("|SIZE|");
+            
+            // Extract Card Details
+            const baseName = items[0].name;
+            const safeName = baseName.replace(/'/g, "\\'");
+            const cardTitle = isAutoHinge ? `${baseName} (${items[0].size})` : baseName;
+            const cardSubtitle = isAutoHinge ? "MULTI-BRAND" : items[0].brand;
+            
+            // --- REPLACE THIS SECTION IN YOUR MANAGER JS ---
+const n = String(baseName).toLowerCase().trim().replace(/[,\s./_]+/g, '-');
+const b = String(items[0].brand).toLowerCase().trim().replace(/[,\s./_]+/g, '-');
+const c = String(cat).toLowerCase().trim().replace(/[,\s./_]+/g, '-');
+
+const imgId = `mgr-img-${Math.random().toString(36).substr(2, 5)}`;
+const paths = [
+    `furniture-img/${c}-${n}.jpg`, 
+    `furniture-img/${b}-${n}.jpg`, 
+    `furniture-img/${n}.jpg`
+];
+
+html += `
+<div style="background: #f8fafc; padding: 20px; display: flex; justify-content: center; align-items: center; height: 160px; position: relative;">
+    <img id="${imgId}" src="https://placehold.co/300x300/f8fafc/b38728?text=Loading..." style="max-height: 100%; max-width: 100%; object-fit: contain;">
+    ... (rest of your delete button code) ...
+</div>`;
+
+// Add this call right after the html += block or at the end of the loop
+setTimeout(() => { if(typeof tryLoadImage === 'function') tryLoadImage(imgId, paths, baseName); }, 50);
+
+            // Encode the items array so the modal knows what to display
+            const encodedItems = encodeURIComponent(JSON.stringify(items));
+
+            html += `
+            <div class="product-block" style="background: white; border: 1px solid #f1f5f9; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.04); overflow: hidden; display: flex; flex-direction: column;">
+                
+                <div style="background: #f8fafc; padding: 20px; display: flex; justify-content: center; align-items: center; height: 160px; position: relative;">
+                    <img id="${imgId}" src="https://placehold.co/300x300/f8fafc/b38728?text=${encodeURIComponent(cardTitle)}" style="max-height: 100%; max-width: 100%; object-fit: contain;">
+                    <button onclick="executeFullDelete('${cat}', '${safeName}')" style="position: absolute; top: 12px; right: 12px; background: white; color: #ef4444; border: 1px solid #fee2e2; width: 35px; height: 35px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05);" title="Delete Entire Product">
+                        🗑️
+                    </button>
+                </div>
+
+                <div style="padding: 15px 10px 20px; text-align: center; flex-grow: 1;">
+                    <div style="color: #b38728; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;">${cardSubtitle}</div>
+                    <div style="color: #0f172a; font-size: 15px; font-weight: 800; margin-top: 8px; line-height: 1.3;">${cardTitle}</div>
+                </div>
+
+                <button onclick="openManagerModal('${encodedItems}', ${isAutoHinge})" style="background: #b38728; color: white; border: none; padding: 14px; width: 100%; font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer;">
+                    CHECK ${isAutoHinge ? 'BRANDS' : 'SIZES'}
+                </button>
+            </div>`;
+        }
+        html += `</div>`; 
+    }
+    html += `</div>`; 
+    
+    // Add the invisible modal container to the bottom of the page
+    if(!document.getElementById('mgr-modal-overlay')) {
+        html += `
+        <div id="mgr-modal-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(2px);">
+            <div style="background: white; width: 90%; max-width: 550px; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.2); display: flex; flex-direction: column;">
+                
+                <div style="padding: 20px 25px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h2 id="mgr-modal-title" style="margin: 0; color: #b38728; font-size: 22px; font-weight: 900;">Title</h2>
+                        <p id="mgr-modal-subtitle" style="margin: 5px 0 0; color: #64748b; font-size: 14px; font-weight: bold;">Subtitle</p>
+                    </div>
+                    <button onclick="closeManagerModal()" style="background: transparent; border: none; font-size: 24px; color: #94a3b8; cursor: pointer; font-weight: bold;">×</button>
+                </div>
+
+                <div style="padding: 0 25px 20px; max-height: 50vh; overflow-y: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #e2e8f0;">
+                                <th id="mgr-modal-col1" style="padding: 10px 5px; color: #334155; font-size: 14px;">Size / Specs</th>
+                                <th style="padding: 10px 5px; color: #334155; font-size: 14px;">MRP (₹)</th>
+                                <th style="padding: 10px 5px; color: #334155; font-size: 14px; text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mgr-modal-body">
+                            </tbody>
+                    </table>
+                </div>
+
+                <div style="padding: 15px 25px; background: #f8fafc; border-top: 1px solid #e2e8f0;">
+                    <button onclick="closeManagerModal()" style="width: 100%; padding: 12px; background: #e2e8f0; color: #334155; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; letter-spacing: 1px;">CLOSE WINDOW</button>
+                </div>
+            </div>
+        </div>`;
+    }
+    
+    container.innerHTML = html;
+}
+// --- 1. OPEN THE MODAL & POPULATE DATA ---
+function openManagerModal(encodedItems, isAutoHinge) {
+    // Decode the data sent from the card button
+    const items = JSON.parse(decodeURIComponent(encodedItems));
+    const modal = document.getElementById('mgr-modal-overlay');
+    const tbody = document.getElementById('mgr-modal-body');
+
+    // 1. Set the Modal Titles
+    const baseName = items[0].name;
+    document.getElementById('mgr-modal-title').innerText = baseName;
+    document.getElementById('mgr-modal-subtitle').innerText = isAutoHinge 
+        ? `Size: ${items[0].size} (Multi-Brand Comparison)` 
+        : `Brand: ${items[0].brand}`;
+    
+    // 2. Adjust Table Headers
+    document.getElementById('mgr-modal-col1').innerText = isAutoHinge ? "Brand" : "Size / Specs";
+
+    // 3. Build the Editable Rows inside the Modal
+    let rowHtml = "";
+    items.forEach(item => {
+        const safeBrand = item.brand.replace(/'/g, "\\'");
+        const safeName = item.name.replace(/'/g, "\\'");
+        const safeSize = item.size.replace(/'/g, "\\'");
+        
+        // If it's an auto hinge, the primary column shows the Brand. Otherwise, it shows the Size.
+        const displayCol1 = isAutoHinge ? item.brand : item.size;
+
+        rowHtml += `
+        <tr class="variant-row" style="border-bottom: 1px solid #f1f5f9; transition: opacity 0.3s;">
+            <td class="val-size" style="padding: 12px 5px; font-weight: 800; color: #0f172a; font-size: 14px;">${displayCol1}</td>
+            <td class="val-price" style="padding: 12px 5px; font-weight: 900; color: #16a34a; font-size: 14px;">₹${item.price}</td>
+            <td style="padding: 12px 5px; text-align: right;">
+                <div style="display: flex; gap: 5px; justify-content: flex-end;">
+                    <button type="button" onclick="toggleInlineEdit(this, '${safeBrand}', '${safeName}', '${safeSize}', '${item.price}')" style="background: #eff6ff; color: #3b82f6; border: 1px solid #93c5fd; padding: 6px 12px; border-radius: 5px; font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.2s;">✎ Edit</button>
+                    <button type="button" onclick="executeSizeDelete('${safeBrand}', '${safeName}', '${safeSize}')" style="background: #fff6f6; color: #ef4444; border: 1px solid #fca5a5; padding: 6px 12px; border-radius: 5px; font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.2s;">✖</button>
+                </div>
+            </td>
+        </tr>`;
+    });
+
+    // 4. Inject the rows and show the modal
+    tbody.innerHTML = rowHtml;
+    modal.style.display = "flex";
+}
+
+// --- 2. CLOSE THE MODAL ---
+function closeManagerModal() {
+    const modal = document.getElementById('mgr-modal-overlay');
+    modal.style.display = "none";
+    document.getElementById('mgr-modal-body').innerHTML = ""; // Clear old data
+}
+
+// INLINE EDITING INSIDE THE MODAL
+function toggleModalInlineEdit(btn, brand, name, oldSize, oldPrice, isAutoHinge) {
+    const row = btn.closest('.modal-variant-row');
+    const labelCell = row.querySelector('.val-label');
+    const priceCell = row.querySelector('.val-price');
+
+    if (btn.innerText.includes("✎")) {
+        const currentLabel = labelCell.innerText;
+        const currentPrice = priceCell.innerText.replace('₹', '');
+        
+        // If AutoHinge, they edit the Brand. If Normal, they edit the Size.
+        labelCell.innerHTML = `<input type="text" class="edit-label" value="${currentLabel}" style="width: 90px; padding: 4px; border: 1px solid #b38728; border-radius: 4px; font-weight: bold; outline: none;">`;
+        priceCell.innerHTML = `<span style="color:#94a3b8;">₹</span> <input type="number" class="edit-price" value="${currentPrice}" style="width: 70px; padding: 4px; border: 1px solid #b38728; border-radius: 4px; font-weight: bold; outline: none;">`;
+        
+        btn.innerHTML = "💾";
+        btn.style.color = "#10b981"; 
+    } else {
+        const newLabel = row.querySelector('.edit-label').value;
+        const newPrice = row.querySelector('.edit-price').value;
+        
+        const finalBrand = isAutoHinge ? newLabel : brand;
+        const finalSize = isAutoHinge ? oldSize : newLabel;
+
+        btn.innerHTML = "⏳";
+        btn.disabled = true;
+
+        fetch(webAppUrl, {
+            method: "POST",
+            mode: "no-cors",
+            body: JSON.stringify({
+                action: "updateRow",
+                brand: brand, // Need old brand to find the row
+                name: name,
+                oldSize: oldSize,
+                newSize: finalSize,
+                newPrice: newPrice
+            })
+        }).then(() => {
+            showToast("✅ Updated successfully!");
+            setTimeout(() => location.reload(), 1500); 
+        });
+    }
+}
+function toggleCardSizes(btn) {
+    // Find the hidden drawer right below the button
+    const drawer = btn.nextElementSibling;
+    
+    if (drawer.style.display === "none") {
+        drawer.style.display = "block";
+        btn.style.background = "#222"; // Turns black when open
+        btn.innerText = "CLOSE SIZES";
+    } else {
+        drawer.style.display = "none";
+        btn.style.background = "#b38728"; // Returns to gold
+        btn.innerText = "CHECK SIZES";
+    }
+}
+// --- ACCORDION TOGGLE LOGIC ---
+function toggleAccordion(headerElement) {
+    const tableContainer = headerElement.nextElementSibling;
+    const icon = headerElement.querySelector('.toggle-icon');
+    
+    if (tableContainer.style.display === "none") {
+        tableContainer.style.display = "block";
+        icon.innerText = "▲"; // Arrow up
+    } else {
+        tableContainer.style.display = "none";
+        icon.innerText = "▼"; // Arrow down
+    }
+}
+// --- 1. CARD-BASED INLINE EDITING ---
+// --- 1. SEAMLESS INLINE EDITING ---
+function toggleInlineEdit(btn, brand, name, oldSize, oldPrice) {
+    const row = btn.closest('.variant-row'); 
+    const sizeCell = row.querySelector('.val-size');
+    const priceCell = row.querySelector('.val-price');
+
+    if (btn.innerText.includes("Edit")) {
+        // Change to input boxes
+        sizeCell.innerHTML = `<input type="text" class="edit-size" value="${oldSize}" style="width: 100px; padding: 6px; border: 2px solid #b38728; border-radius: 5px; font-weight: bold; font-size: 14px; outline: none;">`;
+        priceCell.innerHTML = `<span style="color:#94a3b8; font-size:14px;">₹</span> <input type="number" class="edit-price" value="${oldPrice}" style="width: 80px; padding: 6px; border: 2px solid #16a34a; border-radius: 5px; font-weight: bold; font-size: 14px; outline: none;">`;
+        
+        btn.innerHTML = "💾 Save";
+        btn.style.background = "#10b981"; 
+        btn.style.color = "white";
+        btn.style.borderColor = "#059669";
+    } else {
+        const newSize = row.querySelector('.edit-size').value;
+        const newPrice = row.querySelector('.edit-price').value;
+        
+        btn.innerHTML = "⏳...";
+        btn.style.opacity = "0.7";
+        btn.disabled = true;
+
+        fetch(webAppUrl, {
+            method: "POST",
+            mode: "no-cors",
+            body: JSON.stringify({ action: "updateRow", brand: brand, name: name, oldSize: oldSize, newSize: newSize, newPrice: newPrice })
+        }).then(() => {
+            showToast("✅ Product updated successfully!");
+            
+            // NO REFRESH: Instantly update the text on screen
+            sizeCell.innerHTML = newSize;
+            priceCell.innerHTML = `₹${newPrice}`;
+            
+            // NO REFRESH: Reset the button back to normal
+            btn.innerHTML = "✎ Edit";
+            btn.style.background = "transparent";
+            btn.style.color = "#3b82f6";
+            btn.style.borderColor = "transparent";
+            btn.style.opacity = "1";
+            btn.disabled = false;
+
+            // Update the button's memory so you can edit it again immediately
+            btn.setAttribute('onclick', `toggleInlineEdit(this, '${brand}', '${name}', '${newSize}', '${newPrice}')`);
+        });
+    }
+}
+
+// --- 2. CLEAN SEARCH FILTER ---
+function filterManager() {
+    const query = document.getElementById('managerSearch').value.toLowerCase();
+    const blocks = document.querySelectorAll('.product-block'); // Targets the cards
+    
+    blocks.forEach(block => {
+        const text = block.innerText.toLowerCase();
+        // Shows or hides the entire card based on the search
+        block.style.display = text.includes(query) ? "flex" : "none"; 
+    });
+}
+// --- 1. EDIT A SPECIFIC SIZE/PRICE ---
+function executeQuickEdit(brand, name, oldSize, oldPrice) {
+    const newSize = prompt(`Editing Size for ${brand} ${name}:\nEnter the corrected size:`, oldSize);
+    if (!newSize) return; // User clicked cancel
+    
+    const newPrice = prompt(`Enter the new MRP for ${newSize}:`, oldPrice);
+    if (!newPrice) return; // User clicked cancel
+
+    // Send the command to the Google Apps Script
+    fetch(webAppUrl, {
+        method: "POST",
+        mode: "no-cors",
+        body: JSON.stringify({
+            action: "updateRow",
+            brand: brand,
+            name: name,
+            oldSize: oldSize,
+            newSize: newSize,
+            newPrice: newPrice
+        })
+    }).then(() => {
+        alert("✅ Updated Successfully! Refreshing catalogue...");
+        setTimeout(() => location.reload(), 1500);
+    });
+}
+
+// --- 2. SEAMLESS SIZE DELETE ---
+function executeSizeDelete(brand, name, size) {
+    // Automatically find the row that was clicked
+    const btn = window.event ? window.event.target : null;
+    const row = btn ? btn.closest('.variant-row') : null;
+
+    showCustomConfirm(
+        "Remove Size Variant?",
+        `Are you sure you want to permanently remove <b>${size}</b> from ${brand} ${name}?`,
+        "Yes, Remove Size",
+        () => {
+            showToast("⏳ Removing size...");
+            fetch(webAppUrl, {
+                method: "POST",
+                mode: "no-cors",
+                body: JSON.stringify({ action: "deleteSingleSize", brand: brand, name: name, size: size })
+            }).then(() => {
+                showToast("✅ Size removed successfully!");
+                // NO REFRESH: Smoothly fade out and remove the row
+                if (row) {
+                    row.style.transition = "opacity 0.3s";
+                    row.style.opacity = "0";
+                    setTimeout(() => row.remove(), 300);
+                }
+            });
+        }
+    );
+}
+
+// --- 3. SEAMLESS FULL PRODUCT DELETE ---
+function executeFullDelete(cat, name) {
+    // Automatically find the entire product card that was clicked
+    const btn = window.event ? window.event.target : null;
+    const card = btn ? btn.closest('.product-block') : null;
+
+    showCustomConfirm(
+        "Delete Entire Product?",
+        `<b>Warning:</b> This will delete every single brand and size associated with <b>${name}</b> in the ${cat} category.`,
+        "Delete Entire Family",
+        () => {
+            showToast("⏳ Deleting product...");
+            fetch(webAppUrl, {
+                method: "POST",
+                mode: "no-cors",
+                body: JSON.stringify({ action: "deleteEntireProduct", cat: cat, name: name })
+            }).then(() => {
+                showToast("✅ Product deleted successfully!");
+                // NO REFRESH: Smoothly shrink and remove the whole card
+                if (card) {
+                    card.style.transition = "transform 0.3s, opacity 0.3s";
+                    card.style.transform = "scale(0.9)";
+                    card.style.opacity = "0";
+                    setTimeout(() => card.remove(), 300);
+                }
+            });
+        }
+    );
+}
+function tryLoadImage(imgElement, urls) {
+    if (!imgElement) return;
+    let index = 0;
+    function attemptLoad() {
+        if (index < urls.length) {
+            const imgTester = new Image();
+            imgTester.onload = () => { imgElement.src = urls[index-1]; };
+            imgTester.onerror = attemptLoad;
+            imgTester.src = urls[index++];
+        } else { imgElement.src = 'https://placehold.co/150?text=No+Photo'; }
+    }
+    attemptLoad();
+}
+
+function openModal(name, cat) {
+    document.getElementById('modalTitle').innerText = name;
+    document.getElementById('modalBrand').innerText = cat;
+    const tbody = document.getElementById('modalTableBody');
+    tbody.innerHTML = "";
+
+    const variants = allProducts.filter(p => String(p.name).trim().toLowerCase() === name.trim().toLowerCase() && String(p.cat).trim().toLowerCase() === cat.trim().toLowerCase());
+
+    let collectedSizes = [];
+    variants.forEach((v, idx) => {
+        String(v.specs || "").split(/[,،\n|]+/).forEach((singleSize, sIdx) => {
+            if (singleSize.trim() !== "") {
+                const priceList = String(v.mrp || "0").split(/[,،\n|]+/);
+                const matchedPrice = priceList[sIdx] ? priceList[sIdx].trim() : priceList[0].trim();
+                collectedSizes.push({ brand: v.brand || "No Brand", cleanS: singleSize.trim(), v: v, matchedMRP: matchedPrice, rowId: `row-${idx}-${sIdx}` });
+            }
+        });
+    });
+
+    // Sort by Brand, then Size
+    collectedSizes.sort((a, b) => {
+        const bCmp = a.brand.localeCompare(b.brand);
+        if (bCmp !== 0) return bCmp;
+        return a.cleanS.localeCompare(b.cleanS, undefined, { numeric: true, sensitivity: 'base' });
+    });
+
+    const shownKeys = new Set();
+    collectedSizes.forEach(item => {
+        const uniqueKey = `${item.brand}-${item.cleanS}`;
+        if (!shownKeys.has(uniqueKey)) {
+            const encB = encodeURIComponent(item.brand).replace(/'/g, "%27"), encN = encodeURIComponent(item.v.name).replace(/'/g, "%27"), encS = encodeURIComponent(item.cleanS).replace(/'/g, "%27"), safeMRP = String(item.matchedMRP || "0");
+            tbody.innerHTML += `
+            <tr id="${item.rowId}" style="border-bottom:1px solid #eee;">
+                <td style="padding:12px; color:#b38728; font-weight:800; font-size:11px; text-transform:uppercase;">${item.brand}</td>
+                <td class="size-cell" style="padding:12px; font-weight:700;">${item.cleanS}</td>
+                <td class="mrp-cell" style="padding:12px; color: #b38728; font-weight:bold;">₹${safeMRP}</td>
+                <td style="text-align: right;">
+                    <span class="action-icon edit-icon" onclick="makeEditable('${item.rowId}', '${encB}', '${encN}', '${encS}', '${safeMRP}')"><svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"/></svg></span>
+                    <span class="action-icon delete-row-icon" onclick="deleteRowSafe('${encB}', '${encN}', '${encS}', '${item.rowId}')"><svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19V4M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/></svg></span>
+                </td>
+            </tr>`;
+            shownKeys.add(uniqueKey);
+        }
+    });
+    document.getElementById('priceModal').style.display = "flex";
+}
+
+function makeEditable(rowId, encB, encN, encS, oldMrp) {
+    const row = document.getElementById(rowId), oldSize = decodeURIComponent(encS), safeInput = oldSize.replace(/"/g, '&quot;');
+    row.querySelector('.size-cell').innerHTML = `<input type="text" id="edit-size-${rowId}" value="${safeInput}" style="width:80px; padding:5px; border:1px solid #b38728;">`;
+    row.querySelector('.mrp-cell').innerHTML = `₹<input type="number" id="edit-mrp-${rowId}" value="${oldMrp}" style="width:60px; padding:5px; border:1px solid #b38728;">`;
+    row.querySelector('td:last-child').innerHTML = `
+        <button type="button" onclick="saveInLine('${rowId}', '${encB}', '${encN}', '${encS}')" style="background:#27ae60; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:11px;">SAVE</button>
+        <button type="button" onclick="cancelEditSafe('${rowId}', '${encS}', '${oldMrp}', '${encB}', '${encN}')" style="background:#95a5a6; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:5px; font-size:11px;">X</button>`;
+}
+
+async function saveInLine(rowId, encB, encN, encS) {
+    const row = document.getElementById(rowId), newSize = document.getElementById(`edit-size-${rowId}`).value, newMrp = document.getElementById(`edit-mrp-${rowId}`).value;
+    const brand = decodeURIComponent(encB), name = decodeURIComponent(encN), oldSize = decodeURIComponent(encS);
+    row.querySelector('td:last-child').innerHTML = `<span style="color:#b38728; font-weight:bold; font-size:11px;">SYNCING...</span>`;
+
+    fetch(webAppUrl, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "updateRow", brand: brand, name: name, oldSize: oldSize, newSize: newSize, newPrice: newMrp })
+    }).then(() => {
+        row.querySelector('.size-cell').innerText = newSize; row.querySelector('.mrp-cell').innerText = "₹" + newMrp;
+        cancelEditSafe(rowId, encodeURIComponent(newSize).replace(/'/g, "%27"), newMrp, encB, encN);
+        showToast("Changes saved", "success");
+        allProducts.forEach(p => { if(p.brand === brand && p.name === name && String(p.specs).includes(oldSize)) { p.specs = p.specs.replace(oldSize, newSize); p.mrp = newMrp; } });
+    });
+}
+
+function cancelEditSafe(rowId, encS, oldMrp, encB, encN) {
+    const row = document.getElementById(rowId);
+    row.querySelector('.size-cell').innerText = decodeURIComponent(encS); row.querySelector('.mrp-cell').innerText = "₹" + oldMrp;
+    row.querySelector('td:last-child').innerHTML = `<span class="action-icon edit-icon" onclick="makeEditable('${rowId}', '${encB}', '${encN}', '${encS}', '${oldMrp}')"><svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"/></svg></span><span class="action-icon delete-row-icon" onclick="deleteRowSafe('${encB}', '${encN}', '${encS}', '${rowId}')"><svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19V4M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/></svg></span>`;
+}
+
+function showToast(text, type = 'success') {
+    const toast = document.createElement('div'); toast.className = `toast-msg`; toast.style.background = (type === 'success') ? '#27ae60' : '#e67e22'; toast.innerText = text;
+    document.body.appendChild(toast);
+    setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 500); }, 3000);
+}
+
+let deleteTimeout = null, lastDeletedData = null;
+function showUndoToast(message, actionData) {
+    if (deleteTimeout) executeFinalDelete(); lastDeletedData = actionData;
+    const toast = document.createElement('div'); toast.id = "undoToast"; toast.className = `toast-msg`;
+    toast.innerHTML = `<span>${message}</span><span class="undo-link" onclick="undoAction()">Undo</span><div class="toast-timer"><div class="toast-progress"></div></div>`;
+    document.body.appendChild(toast);
+    deleteTimeout = setTimeout(() => executeFinalDelete(), 5000);
+}
+
+function undoAction() {
+    clearTimeout(deleteTimeout); deleteTimeout = null; document.getElementById('undoToast')?.remove();
+    if (lastDeletedData.type === 'full') { const t = document.getElementById(lastDeletedData.id); if(t) { t.style.display = 'flex'; setTimeout(() => t.style.opacity = '1', 10); } } 
+    else { const r = document.getElementById(lastDeletedData.id); if(r) r.style.display = 'table-row'; }
+    lastDeletedData = null; showToast("Restored successfully!", "success");
+}
+
+async function executeFinalDelete() {
+    const t = document.getElementById('undoToast'); if (t) { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }
+    if (!lastDeletedData) return;
+    const payload = { action: lastDeletedData.type === 'full' ? "deleteEntireProduct" : "deleteSingleSize", brand: lastDeletedData.brand, name: lastDeletedData.name, size: lastDeletedData.size };
+    fetch(webAppUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+    setTimeout(() => showToast("Deleted from Database", "success"), 500);
+    lastDeletedData = null; deleteTimeout = null;
+}
+
+function deleteRowSafe(encB, encN, encS, rowId) {
+    const size = decodeURIComponent(encS);
+    askBeforeDelete("Remove Size?", `Remove "${size}"?`, () => {
+        const row = document.getElementById(rowId); if(row) row.style.display = 'none';
+        showUndoToast("Size removed", { type: 'row', brand: decodeURIComponent(encB), name: decodeURIComponent(encN), size, id: rowId });
+    });
+}
+
+function askBeforeDelete(title, text, action) {
+    document.getElementById('confirmTitle').innerText = title; document.getElementById('confirmText').innerText = text; document.getElementById('customConfirmModal').style.display = 'flex';
+    document.getElementById('confirmYesBtn').onclick = () => { action(); closeConfirm(); };
+}
+
+function closeConfirm() { document.getElementById('customConfirmModal').style.display = 'none'; }
+
+async function handleAddProduct(event) {
+    event.preventDefault(); const btn = document.getElementById('submitBtn'); btn.innerText = "SAVING..."; btn.disabled = true;
+    try {
+        const fileInput = document.getElementById('new-product-file'); let fileData = "", mimeType = "", filename = "";
+        if (fileInput.files.length > 0) {
+            const file = fileInput.files[0]; const reader = new FileReader();
+            fileData = await new Promise(res => { reader.onload = e => res(e.target.result.split(',')[1]); reader.readAsDataURL(file); });
+            mimeType = file.type; filename = file.name;
+        }
+        const payload = { action: "addWithImage", cat: document.getElementById('newCat').value, brand: document.getElementById('newBrand').value || "N/A", name: document.getElementById('newName').value, specs: document.getElementById('newSpecs').value, mrp: document.getElementById('newMrp').value, fileData, mimeType, filename };
+        await fetch(webAppUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
+        showToast("Product added!", "success"); document.getElementById('addProductForm').reset(); closeAllModals(); setTimeout(loadManagerData, 2000);
+    } catch (error) { showToast("Failed to save.", "error"); } finally { btn.innerText = "Add to Inventory"; btn.disabled = false; }
+}
+
+function populateCats(products) {
+    const catSelect = document.getElementById('newCat'); if (!catSelect) return;
+    const categories = [...new Set(products.map(p => p.cat))].filter(c => c).sort();
+    catSelect.innerHTML = '<option value="">Select Category</option>' + categories.map(c => `<option value="${c}">${c}</option>`).join('') + '<option value="ADD_NEW" style="color:#d4af37; font-weight:bold;">+ Add New Category</option>';
+    catSelect.onchange = function() {
+        if (this.value === "ADD_NEW") { const nCat = prompt("New Category Name:"); if (nCat) { const opt = document.createElement('option'); opt.value = nCat; opt.text = nCat; this.add(opt, this.options[this.length - 1]); this.value = nCat; } else this.value = ""; }
+    };
+}
+
+function populateSuggestions(products) {
+    uniqueBrands = [...new Set(products.map(p => String(p.brand || "").trim()))].filter(b => b && b !== "N/A").sort();
+    uniqueNames = [...new Set(products.map(p => String(p.name || "").trim()))].filter(n => n && n !== "Unnamed").sort();
+}
+
+function showSuggestions(input, type) {
+    const val = input.value.toLowerCase(), container = document.getElementById(type === 'brand' ? 'brandSuggestions' : 'nameSuggestions'), list = type === 'brand' ? uniqueBrands : uniqueNames;
+    container.innerHTML = ""; if (!val) { container.style.display = "none"; return; }
+    const filtered = list.filter(item => item.toLowerCase().includes(val));
+    if (filtered.length > 0) {
+        container.style.display = "block";
+        filtered.forEach(item => { const div = document.createElement('div'); div.className = 'suggestion-item'; div.innerText = item; div.onclick = () => { input.value = item; container.style.display = "none"; }; container.appendChild(div); });
+    } else container.style.display = "none";
+}
+
+document.addEventListener('click', e => { if (!e.target.matches('input')) document.querySelectorAll('.suggestion-container').forEach(c => c.style.display = "none"); });
+function filterProducts() { const q = document.getElementById('searchInput').value.toLowerCase(); document.querySelectorAll('.product-card').forEach(c => c.style.display = c.innerText.toLowerCase().includes(q) ? "" : "none"); }
+function logout() { sessionStorage.removeItem('managerAuth'); window.location.href = "furniture-index.html"; }
+function scrollToTop() { window.scrollTo({top: 0, behavior: 'smooth'}); }
+window.onscroll = () => document.getElementById("backToTop").style.display = (window.scrollY > 300) ? "flex" : "none";
+function toggleAddModal() { const m = document.getElementById('addProductModal'), b = document.getElementById('modalBackdrop'); m.style.display = m.style.display === 'block' ? 'none' : 'block'; b.style.display = b.style.display === 'block' ? 'none' : 'block'; }
+function closeAllModals() { document.getElementById('priceModal').style.display = 'none'; document.getElementById('addProductModal').style.display = 'none'; document.getElementById('modalBackdrop').style.display = 'none'; document.body.style.overflow = 'auto'; }
+// ==========================================
+// 🌟 PROFESSIONAL UI NOTIFICATIONS & MODALS
+// ==========================================
+
+// 1. The Floating "Toast" Notification (For Saving)
+function showToast(message, isError = false) {
+    let toast = document.getElementById("pro-toast");
+    if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "pro-toast";
+        toast.style.cssText = `position: fixed; bottom: 30px; right: 30px; padding: 16px 24px; border-radius: 8px; font-weight: bold; color: white; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 9999; transition: opacity 0.3s, transform 0.3s; opacity: 0; transform: translateY(20px); display: flex; align-items: center; gap: 10px;`;
+        document.body.appendChild(toast);
+    }
+    
+    toast.style.background = isError ? "#ef4444" : "#10b981"; // Red for error, Green for success
+    toast.innerHTML = message;
+    
+    // Slide in
+    setTimeout(() => { toast.style.opacity = "1"; toast.style.transform = "translateY(0)"; }, 10);
+    
+    // Slide out after 2.5 seconds
+    setTimeout(() => { toast.style.opacity = "0"; toast.style.transform = "translateY(20px)"; }, 2500);
+}
+
+// 2. The Custom Confirmation Box (For Deleting)
+let currentConfirmAction = null; 
+
+function showCustomConfirm(title, message, btnText, actionCallback) {
+    let overlay = document.getElementById("pro-confirm-overlay");
+    if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.id = "pro-confirm-overlay";
+        overlay.style.cssText = `position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); display: none; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(3px); opacity: 0; transition: opacity 0.2s;`;
+        
+        overlay.innerHTML = `
+            <div style="background: white; padding: 30px; border-radius: 12px; width: 380px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); text-align: center; transform: scale(0.95); transition: transform 0.2s;" id="pro-confirm-box">
+                <div style="width: 50px; height: 50px; background: #fee2e2; color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 15px;">⚠️</div>
+                <h3 id="pro-confirm-title" style="margin: 0 0 10px; color: #1e293b; font-size: 20px; font-weight: 900;"></h3>
+                <p id="pro-confirm-message" style="color: #64748b; margin: 0 0 25px; line-height: 1.5; font-size: 15px;"></p>
+                <div style="display: flex; gap: 15px; justify-content: center;">
+                    <button onclick="closeCustomConfirm()" style="flex: 1; padding: 12px; border: none; background: #f1f5f9; color: #475569; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s;">Cancel</button>
+                    <button id="pro-confirm-btn" onclick="executeCustomConfirm()" style="flex: 1; padding: 12px; border: none; background: #ef4444; color: white; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; box-shadow: 0 4px 6px rgba(239, 68, 68, 0.3);"></button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+    }
+
+    document.getElementById("pro-confirm-title").innerText = title;
+    document.getElementById("pro-confirm-message").innerHTML = message;
+    document.getElementById("pro-confirm-btn").innerText = btnText;
+    currentConfirmAction = actionCallback;
+
+    overlay.style.display = "flex";
+    setTimeout(() => { overlay.style.opacity = "1"; document.getElementById("pro-confirm-box").style.transform = "scale(1)"; }, 10);
+}
+
+function closeCustomConfirm() {
+    let overlay = document.getElementById("pro-confirm-overlay");
+    overlay.style.opacity = "0";
+    document.getElementById("pro-confirm-box").style.transform = "scale(0.95)";
+    setTimeout(() => { overlay.style.display = "none"; }, 200);
+}
+
+function executeCustomConfirm() {
+    closeCustomConfirm();
+    if (currentConfirmAction) currentConfirmAction();
+}
+loadManagerData();
+</script>
+</body>
+</html>
