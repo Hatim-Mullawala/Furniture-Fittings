@@ -260,21 +260,30 @@ async function renderFrontPage(products) {
                     <div class="product-grid">`; 
             }
 
-            // --- THE FIXED IMAGE LOGIC (No more SyntaxError) ---
+            // 1. Clean all text for URLs (just like the manager)
             const nClean = String(p.name).toLowerCase().trim().replace(/[,\s./_]+/g, '-');
+            const sClean = String(p.specs).toLowerCase().trim().replace(/[,\s./_]+/g, '-');
             const bClean = String(p.brand).toLowerCase().trim().replace(/[,\s./_]+/g, '-');
             const cClean = String(p.cat).toLowerCase().trim().replace(/[,\s./_]+/g, '-');
-            const sClean = String(p.specs).toLowerCase().trim().replace(/[,\s./_]+/g, '-');
 
+            // 2. The Upgraded Master Image Path Searcher (Now with .png!)
             const paths = isHandle 
-                ? [`furniture-img/${nClean}-combo.jpg`, `furniture-img/${nClean}.jpg`] 
+                ? [
+                    `furniture-img/${nClean}-combo.jpg`, 
+                    `furniture-img/${nClean}.jpg`,
+                    `furniture-img/${nClean}-combo.png`,
+                    `furniture-img/${nClean}.png`
+                  ] 
                 : [
-                    `furniture-img/${sClean}.jpg`,           
-                    `furniture-img/${cClean}-${nClean}.jpg`, 
-                    `furniture-img/${bClean}-${nClean}.jpg`, 
-                    `furniture-img/${nClean}.jpg`            
+                    `furniture-img/${sClean}.jpg`,           // 1. Specs (JPG)
+                    `furniture-img/${bClean}-${nClean}.jpg`, // 2. Brand-Name (JPG)
+                    `furniture-img/${cClean}-${nClean}.jpg`, // 3. Category-Name (JPG)
+                    `furniture-img/${nClean}.jpg`,           // 4. Name Only (JPG)
+                    `furniture-img/${sClean}.png`,           // 5. Specs (PNG)
+                    `furniture-img/${bClean}-${nClean}.png`, // 6. Brand-Name (PNG)
+                    `furniture-img/${cClean}-${nClean}.png`, // 7. Category-Name (PNG)
+                    `furniture-img/${nClean}.png`            // 8. Name Only (PNG)
                   ];
-
             const encN = encodeURIComponent(p.name).replace(/'/g, "%27");
             const encC = encodeURIComponent(catName).replace(/'/g, "%27");
             const encParam = isAutoHinge ? encodeURIComponent(p.specs).replace(/'/g, "%27") : encodeURIComponent(p.brand).replace(/'/g, "%27");
@@ -310,23 +319,23 @@ async function renderFrontPage(products) {
     if (html !== "") html += "</div></div>"; 
     container.innerHTML = html;
 }
-function tryLoadImage(imgId, paths, productName) {
-    const imgElement = document.getElementById(imgId);
-    if (!imgElement) return;
-    let currentPathIndex = 0;
+function tryLoadImage(idOrElement, urls) {
+    // This tells it to find the actual HTML image box!
+    const imgElement = typeof idOrElement === 'string' ? document.getElementById(idOrElement) : idOrElement;
     
-    function loadNext() {
-        if (currentPathIndex < paths.length) {
-            console.log("Trying path:", paths[currentPathIndex]); // Debugging line
-            imgElement.src = paths[currentPathIndex];
-            currentPathIndex++;
-        } else {
-            imgElement.src = `https://placehold.co/300x300/f8fafc/b38728?text=${encodeURIComponent(productName)}`;
-            imgElement.onerror = null; 
+    if (!imgElement) return;
+    let index = 0;
+    function attemptLoad() {
+        if (index < urls.length) {
+            const imgTester = new Image();
+            imgTester.onload = () => { imgElement.src = urls[index-1]; };
+            imgTester.onerror = attemptLoad;
+            imgTester.src = urls[index++];
+        } else { 
+            imgElement.src = 'https://placehold.co/300x300/f8fafc/b38728?text=No+Photo'; 
         }
     }
-    imgElement.onerror = loadNext;
-    loadNext(); 
+    attemptLoad();
 }
 function openModal(name, cat, param, isAutoHinge) {
     try {
