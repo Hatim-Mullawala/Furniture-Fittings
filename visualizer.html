@@ -3,247 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Design Visualizer - Hatimi Hardware</title>
+    <title>Hatimi Hardware - AI Design Visualizer</title>
     <style>
-        :root {
-            --primary-gold: #b38728;
-            --dark-bg: #1e1e1e;
-            --panel-bg: #2a2a2a;
-        }
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: var(--dark-bg);
-            color: #fff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        :root { --primary-gold: #b38728; --dark-bg: #1e1e1e; --panel-bg: #2a2a2a; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background-color: var(--dark-bg); color: #fff; display: flex; flex-direction: column; align-items: center; }
+        header { width: 100%; background: #111; padding: 15px; text-align: center; border-bottom: 3px solid var(--primary-gold); box-sizing: border-box; }
+        header h1 { margin: 0; color: var(--primary-gold); text-transform: uppercase; letter-spacing: 2px; }
+
+        .app-container { display: flex; flex-wrap: wrap; width: 100%; max-width: 1200px; margin-top: 20px; gap: 20px; padding: 20px; box-sizing: border-box; }
+
+        /* --- CONTROLS --- */
+        .controls { flex: 1; min-width: 320px; background: var(--panel-bg); padding: 20px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .step-title { color: var(--primary-gold); font-weight: bold; text-transform: uppercase; margin: 20px 0 10px; border-bottom: 1px solid #444; }
+
+        .scan-btn { background: var(--primary-gold); color: #fff; padding: 15px; width: 100%; border-radius: 8px; text-align: center; font-weight: bold; cursor: pointer; display: block; box-sizing: border-box; }
+
+        .handle-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .handle-btn { background: #333; border: 2px solid #444; border-radius: 8px; padding: 8px; cursor: pointer; text-align: center; transition: 0.2s; }
+        .handle-btn img { width: 100%; height: 50px; object-fit: contain; }
+        .handle-btn.active { border-color: var(--primary-gold); background: #444; }
+        .handle-btn p { margin: 5px 0 0; font-size: 10px; color: #ccc; }
+
+        /* --- VISUALIZER --- */
+        .visualizer-stage { flex: 2; display: flex; justify-content: center; }
+        .wardrobe-canvas { position: relative; width: 100%; max-width: 800px; aspect-ratio: 16 / 10; background: #111; overflow: hidden; border-radius: 8px; }
+
+        #layer-mica { 
+            position: absolute; width: 100%; height: 100%; z-index: 1;
+            background-repeat: repeat; background-size: 1000px;
+            filter: brightness(0.85) contrast(1.1); 
         }
 
-        header {
-            width: 100%;
-            background: #111;
-            padding: 15px 20px;
-            text-align: center;
-            border-bottom: 3px solid var(--primary-gold);
-            box-sizing: border-box;
-        }
-        header h1 {
-            margin: 0;
-            color: var(--primary-gold);
-            font-size: 24px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-        header p { margin: 5px 0 0; color: #aaa; font-size: 13px; }
+        #layer-mask { position: absolute; width: 100%; height: 100%; z-index: 3; object-fit: cover; pointer-events: none; }
 
-        .app-container {
-            display: flex;
-            flex-direction: row;
-            flex-wrap: wrap;
-            width: 100%;
-            max-width: 1000px;
-            margin-top: 20px;
-            gap: 20px;
-            padding: 0 20px;
-            box-sizing: border-box;
+        #layer-handle { 
+            position: absolute; z-index: 4; top: 55%; left: 71.5%; 
+            width: 25px; height: auto; transform: translateY(-50%);
+            mix-blend-mode: multiply; /* Removes white background from handle photos */
+            filter: drop-shadow(4px 4px 5px rgba(0,0,0,0.6)) contrast(1.2);
+            pointer-events: none;
         }
 
-        /* --- THE CONTROLS PANEL --- */
-        .controls {
-            flex: 1;
-            min-width: 300px;
-            background: var(--panel-bg);
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        .step-title {
-            font-size: 14px;
-            font-weight: bold;
-            color: var(--primary-gold);
-            text-transform: uppercase;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #444;
-            padding-bottom: 5px;
-        }
+        .lighting-overlay { position: absolute; width: 100%; height: 100%; z-index: 2; pointer-events: none; background: linear-gradient(to bottom, rgba(255,255,255,0.1) 0%, transparent 40%, rgba(0,0,0,0.2) 100%); }
+        /* Apply this to both handles */
+.handle-style {
+    position: absolute;
+    z-index: 5;
+    top: 55%;
+    width: 25px;
+    height: auto;
+    transform: translateY(-50%);
+    mix-blend-mode: multiply;
+    filter: drop-shadow(4px 4px 5px rgba(0,0,0,0.6)) contrast(1.2);
+    pointer-events: none;
+}
 
-        /* Scan Button */
-        .scan-btn {
-            background: var(--primary-gold);
-            color: #fff;
-            padding: 15px;
-            width: 100%;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: 0.3s;
-            margin-bottom: 30px;
-        }
-        .scan-btn:hover { background: #d4af37; transform: translateY(-2px); }
-        #mica-upload { display: none; }
-
-        /* Handle Selector Grid */
-        .handle-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-        }
-        .handle-btn {
-            background: #333;
-            border: 2px solid #444;
-            border-radius: 8px;
-            padding: 10px;
-            cursor: pointer;
-            transition: 0.2s;
-            text-align: center;
-        }
-        .handle-btn img {
-            width: 100%;
-            height: 60px;
-            object-fit: contain;
-        }
-        .handle-btn:hover, .handle-btn.active {
-            border-color: var(--primary-gold);
-            background: #444;
-        }
-        .handle-btn p { margin: 5px 0 0; font-size: 11px; color: #ccc; }
-
-        /* --- THE LAYER CAKE VISUALIZER --- */
-        .visualizer-stage {
-            flex: 1.5;
-            min-width: 300px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        /* This is the window that holds the layers */
-        .wardrobe-canvas {
-            position: relative;
-            width: 100%;
-            max-width: 400px;
-            aspect-ratio: 3 / 4;
-            background: #333;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
-            border: 4px solid #111;
-        }
-
-        /* LAYER 1: The seamlessly repeating Mica background */
-        #layer-1-mica {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-image: url('https://placehold.co/100x100/444/555?text=Mica');
-            background-repeat: repeat; 
-            background-size: 150px; /* Adjust this to make pattern bigger/smaller */
-            z-index: 1;
-        }
-
-        /* LAYER 2: The transparent wardrobe shadows */
-        #layer-2-wardrobe {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            object-fit: cover;
-            z-index: 2;
-            mix-blend-mode: multiply; /* THIS IS THE MAGIC HACK */
-        }
-
-        /* LAYER 3: The transparent handle */
-        #layer-3-handle {
-            position: absolute;
-            z-index: 3;
-            /* Default position for a handle on a wardrobe door */
-            top: 45%; 
-            left: 45%; 
-            width: 30px; 
-            height: 150px;
-            object-fit: contain;
-            transition: 0.3s;
-            filter: drop-shadow(5px 5px 5px rgba(0,0,0,0.6)); /* Adds realistic shadow */
-        }
+#layer-handle-left { left: 28%; }  /* Positions on left doors */
+#layer-handle-right { left: 71.5%; } /* Positions on right doors */
     </style>
 </head>
 <body>
 
     <header>
         <h1>Hatimi Hardware</h1>
-        <p>AI Wardrobe & Design Visualizer</p>
+        <p>Professional AI Design Visualizer</p>
     </header>
 
     <div class="app-container">
         <div class="controls">
-            <div class="step-title">Step 1: Scan Customer Mica</div>
-            
-            <input type="file" id="mica-upload" accept="image/*" capture="environment" onchange="applyMicaTexture(event)">
-            <button class="scan-btn" onclick="document.getElementById('mica-upload').click()">
-                📷 SCAN MICA PIECE
-            </button>
+            <div class="step-title">1. Scan Mica</div>
+            <label class="scan-btn">
+                📷 SCAN OR UPLOAD MICA
+                <input type="file" id="mica-upload" accept="image/*" onchange="applyMicaTexture(event)" style="display: none;">
+            </label>
 
-            <div class="step-title">Step 2: Select Fitting</div>
-            <div class="handle-grid">
-                <div class="handle-btn active" onclick="applyHandle('https://cdn-icons-png.flaticon.com/512/8061/8061036.png', this)">
-                    <img src="https://cdn-icons-png.flaticon.com/512/8061/8061036.png" style="filter: invert(1);">
-                    <p>Profile Gold</p>
+            <div class="step-title">2. Select Handle</div>
+            <div id="handle-selector-grid" class="handle-grid">
                 </div>
-                <div class="handle-btn" onclick="applyHandle('https://cdn-icons-png.flaticon.com/512/8061/8061036.png', this)">
-                    <img src="https://cdn-icons-png.flaticon.com/512/8061/8061036.png">
-                    <p>Matte Black</p>
-                </div>
-                <div class="handle-btn" onclick="applyHandle('https://placehold.co/40x200/transparent/fff?text=H', this)">
-                    <img src="https://placehold.co/40x200/222/fff?text=Handle">
-                    <p>Rose Gold</p>
-                </div>
-            </div>
         </div>
 
         <div class="visualizer-stage">
             <div class="wardrobe-canvas">
-                <div id="layer-1-mica"></div>
-                
-                <img id="layer-2-wardrobe" src="furniture-img/c38196347f620273e8-width-508.webp">
-                
-                <img id="layer-3-handle" src="https://cdn-icons-png.flaticon.com/512/8061/8061036.png" style="filter: invert(1) drop-shadow(5px 5px 5px rgba(0,0,0,0.6));">
+                <div id="layer-mica"></div>
+                <div class="lighting-overlay"></div>
+                <img src="furniture-img/your-original-wardrobe-photo.jpg" style="position:absolute; width:100%; height:100%; z-index:2; mix-blend-mode: multiply; opacity: 0.3; pointer-events: none;">
+                <img id="layer-mask" src="furniture-img/wardrobe-final-mask.png">
+                <img id="layer-handle" src="">
+                <img id="layer-handle-left" class="handle-style" src="">
+                <img id="layer-handle-right" class="handle-style" src="">
             </div>
         </div>
     </div>
 
     <script>
-        // --- FUNCTION 1: TURN PHOTO INTO SEAMLESS BACKGROUND ---
+        // --- 1. HANDLE DATABASE (Just add your filenames here!) ---
+        const handleList = [
+            { name: "Tesla Grey", file: "e-tesla-rembogrey.jpg" },
+            { name: "Gold Profile", file: "gold-profile.png" },
+            { name: "Matte Black", file: "black-handle.png" }
+        ];
+
+        // --- 2. AUTOMATIC GRID LOADER ---
+        function loadHandles() {
+            const grid = document.getElementById('handle-selector-grid');
+            handleList.forEach((handle, index) => {
+                const btn = document.createElement('div');
+                btn.className = 'handle-btn' + (index === 0 ? ' active' : '');
+                btn.onclick = () => applyHandle(`furniture-img/${handle.file}`, btn);
+                btn.innerHTML = `<img src="furniture-img/${handle.file}"><p>${handle.name}</p>`;
+                grid.appendChild(btn);
+                if(index === 0) document.getElementById('layer-handle').src = `furniture-img/${handle.file}`;
+            });
+        }
+
         function applyMicaTexture(event) {
             const file = event.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    // Takes the uploaded image and sets it as the repeating background of Layer 1
-                    document.getElementById('layer-1-mica').style.backgroundImage = `url(${e.target.result})`;
-                }
+                reader.onload = e => document.getElementById('layer-mica').style.backgroundImage = `url(${e.target.result})`;
                 reader.readAsDataURL(file);
             }
         }
+function applyHandle(imageSrc, btnElement) {
+    // Updates BOTH handles at the same time
+    document.getElementById('layer-handle-left').src = imageSrc;
+    document.getElementById('layer-handle-right').src = imageSrc;
 
-        // --- FUNCTION 2: SWAP THE HANDLE ---
-        function applyHandle(imageSrc, btnElement) {
-            // Change the image source of Layer 3
-            const handleLayer = document.getElementById('layer-3-handle');
-            handleLayer.src = imageSrc;
+    document.querySelectorAll('.handle-btn').forEach(btn => btn.classList.remove('active'));
+    btnElement.classList.add('active');
+}
 
-            // Optional: Remove the invert filter if you are using real photos instead of black icons
-            handleLayer.style.filter = "drop-shadow(5px 5px 5px rgba(0,0,0,0.6))";
-
-            // Update the UI buttons to show which one is selected
-            const buttons = document.querySelectorAll('.handle-btn');
-            buttons.forEach(btn => btn.classList.remove('active'));
-            btnElement.classList.add('active');
-        }
+        window.onload = loadHandles;
     </script>
 </body>
 </html>
