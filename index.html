@@ -309,38 +309,39 @@ async function loadFurnitureData() {
     try {
         const response = await fetch(furnitureSheetURL);
         const csvText = await response.text();
-        const pRows = csvText.split(/\r?\n/).slice(1); // Skip the header row
+        const pRows = csvText.split(/\r?\n/).slice(1);
 
         allProducts = pRows.map(row => {
             const c = parseCSVLine(row);
-            // If the row is empty, skip it
             if (c.length < 3) return null;
 
-           return {
-                // BULLETPROOF SEARCH: Saves every single word in the row for the filter
+            return {
                 rawSearch: row.toLowerCase().replace(/"/g, ''),
-                
-                // Normal columns
                 cat:   c[0] ? c[0].replace(/"/g, '').trim() : "General",
                 brand: c[1] ? c[1].replace(/"/g, '').trim() : "Hatimi",
                 name:  c[2] ? c[2].replace(/"/g, '').trim() : "Product",
                 specs: c[3] ? c[3].replace(/(^"|"$)/g, '').trim() : "",
-                
-                // If your MRP is showing as ₹0, try changing c[5] to c[6] or c[7] 
-                // depending on exactly which column holds your price!
-                mrp:   c[5] ? String(c[5]).replace(/[₹\s,"]/g, '').trim() : "0"
+                mrp:   c[5] ? String(c[5]).replace(/[₹\s,"]/g, '').trim() : "0",
+                tag:   c[6] ? String(c[6]).toLowerCase().trim() : "" 
             };
-        }).filter(p => p !== null); // Remove empty rows
+        }).filter(p => p !== null);
 
-        console.log("Loaded Products:", allProducts); // Check your console (F12) to see if data arrived
+        console.log("Loaded Products:", allProducts);
         renderFrontPage(allProducts);
+
+        // --- NEW: LIVE TIME SYNC UPDATER ---
+        const now = new Date();
+        const formattedDate = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        const formattedTime = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+        
+        document.getElementById('syncStatus').innerHTML = `🟢 Live Inventory Sync: <b>${formattedDate} at ${formattedTime}</b>`;
 
     } catch (error) {
         console.error("Data Load Error:", error);
-        document.getElementById('catalog-container').innerHTML = "<p style='color:red; text-align:center;'>Error loading data. Please check if the Sheet is Published to Web.</p>";
+        document.getElementById('syncStatus').innerHTML = "<span style='color:red;'>🔴 Sync Failed. Check Connection.</span>";
+        document.getElementById('catalog-container').innerHTML = "<p style='color:red; text-align:center;'>Error loading data.</p>";
     }
 }
-
 async function renderFrontPage(products) {
     const container = document.getElementById('catalog-container');
     if (!container) return;
