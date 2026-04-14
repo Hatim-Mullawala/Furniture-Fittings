@@ -188,6 +188,46 @@
     color: white; 
     box-shadow: 0 4px 10px rgba(179,135,40,0.3); 
 }
+/* --- GLOBAL NAVIGATION MENU --- */
+.global-nav {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+    width: 100%;
+}
+.nav-link {
+    text-decoration: none;
+    background: #fff;
+    color: #333;
+    border: 2px solid var(--primary-gold);
+    padding: 8px 20px;
+    border-radius: 8px; /* Square with soft corners */
+    font-weight: 800;
+    font-size: 14px;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.nav-link:hover {
+    background: #fdfaf3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(179, 135, 40, 0.2);
+}
+/* The highlighted state for the page you are currently on */
+.nav-link.active-nav {
+    background: var(--primary-gold);
+    color: white;
+    box-shadow: 0 4px 10px rgba(179, 135, 40, 0.4);
+}
+
+@media screen and (max-width: 768px) {
+    .global-nav { gap: 10px; margin-top: 20px; }
+    .nav-link { padding: 8px 12px; font-size: 12px; flex: 1; justify-content: center; text-align: center; }
+}
     </style>
 </head>
 <body>
@@ -211,6 +251,12 @@
                 <p class="tagline">Premium Handles • Auto Hinges • Adhesives</p>
             </div>
         </div>
+        <div class="global-nav no-print">
+            <a href="https://hatim-mullawala.github.io/Furniture-Fittings/" class="nav-link active-nav">🛋️ Furniture</a>
+            <a href="https://hatim-mullawala.github.io/Wholesale-Catalogue/" class="nav-link">📦 Wholesale</a>
+            <a href="https://hatim-mullawala.github.io/Hatimi-Hardware-Catalogue/" class="nav-link">🛠️ Tools</a>
+        </div>
+        <button onclick="location.reload()" style="background:none; border:none; cursor:pointer; font-size:26px; color:#b38728;" class="no-print">↻</button>
         <div class="action-buttons">
             <button class="icon-btn" onclick="location.reload()" title="Refresh Catalog">
                 <svg width="22" height="22" viewBox="0 0 24 24"><path fill="#b38728" d="M12,18A6,6 0 0,1 6,12C6,11 6.25,10.03 6.7,9.2L5.24,7.74C4.46,8.97 4,10.43 4,12A8,8 0 0,0 12,20V23L16,19L12,15V18M12,4V1L8,5L12,9V6A6,6 0 0,1 18,12C18,13 17.75,13.97 17.3,14.8L18.76,16.26C19.54,15.03 20,13.57 20,12A8,8 0 0,0 12,4Z"/></svg>
