@@ -228,6 +228,89 @@
     .global-nav { gap: 10px; margin-top: 20px; }
     .nav-link { padding: 8px 12px; font-size: 12px; flex: 1; justify-content: center; text-align: center; }
 }
+/* --- UPGRADED GLOBAL CART BAR --- */
+.global-cart-bar {
+    position: fixed; bottom: 0; left: 0; width: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 -4px 25px rgba(0,0,0,0.1);
+    display: none; 
+    justify-content: space-between; align-items: center;
+    padding: 15px 5%; box-sizing: border-box;
+    z-index: 10000; border-top: 1px solid #e2e8f0;
+}
+.cart-info { display: flex; flex-direction: column; }
+.cart-items-text { font-size: 12px; color: #64748b; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 2px; }
+.cart-total-text { font-size: 24px; color: #1e293b; font-weight: 900; }
+.cart-total-text span { color: #b38728; margin-right: 2px; }
+.btn-checkout {
+    background: linear-gradient(135.5deg, #b38728 0%, #8e6a20 100%);
+    color: white; border: none; padding: 14px 28px;
+    border-radius: 50px; font-weight: 800; font-size: 15px; cursor: pointer;
+    box-shadow: 0 4px 15px rgba(179, 135, 40, 0.3);
+    transition: all 0.3s ease; display: flex; align-items: center; gap: 8px;
+}
+.btn-checkout:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(179, 135, 40, 0.4); }
+/* --- TRASH ICON BUTTON STYLES --- */
+.btn-clear {
+    background: transparent; border: 2px solid #ef4444; 
+    width: 48px; height: 48px; border-radius: 50%; 
+    display: flex; justify-content: center; align-items: center;
+    cursor: pointer; transition: all 0.3s ease;
+}
+.btn-clear svg {
+    stroke: #ef4444; 
+    transition: stroke 0.3s ease;
+    pointer-events: none; /* GUARANTEES THE BUTTON CLICKS PERFECTLY */
+}
+.btn-clear:hover { 
+    background: #ef4444; 
+    transform: translateY(-2px); 
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); 
+}
+.btn-clear:hover svg {
+    stroke: white; 
+}
+/* --- PREMIUM HEADER STYLES --- */
+.premium-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 15px 30px; background: #fff;
+    border-bottom: 2px solid #b38728; /* Crisp gold line across the bottom */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    margin-bottom: 20px;
+}
+
+/* 1. Brand & Logo */
+.brand-section { display: flex; align-items: center; gap: 15px; }
+.brand-logo { height: 55px; object-fit: contain; } 
+.brand-text h2 { margin: 0; font-size: 24px; font-weight: 900; color: #b38728; line-height: 1; letter-spacing: 0.5px; }
+.brand-text p { margin: 4px 0 0 0; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 1px; }
+
+/* 2. Middle Navigation (App-Style Pill Container) */
+.nav-section { 
+    display: flex; gap: 5px; background: #f8fafc; padding: 6px; 
+    border-radius: 50px; border: 1px solid #e2e8f0; 
+}
+.nav-pill {
+    background: transparent; border: none; padding: 10px 24px; border-radius: 40px;
+    font-weight: 800; font-size: 13px; color: #64748b; cursor: pointer; 
+    transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.nav-pill:hover { color: #1e293b; background: #f1f5f9; }
+.nav-pill.active { 
+    background: #b38728; color: white; 
+    box-shadow: 0 4px 10px rgba(179, 135, 40, 0.3); 
+}
+
+/* 3. Right Action Icons */
+.action-section { display: flex; gap: 12px; }
+.icon-btn {
+    width: 44px; height: 44px; border-radius: 50%; background: #fff; border: 1px solid #e2e8f0;
+    display: flex; justify-content: center; align-items: center; cursor: pointer; color: #b38728;
+    transition: all 0.3s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.icon-btn:hover { border-color: #b38728; background: #fffbeb; transform: translateY(-2px); }
+.icon-btn svg { width: 18px; height: 18px; }
     </style>
 </head>
 <body>
@@ -243,29 +326,39 @@
 </div>
 
 <div class="main-wrapper">
-    <header class="catalog-header">
-        <div class="logo-section">
-            <img src="logo.png" class="logo-img" alt="Logo" style="cursor: pointer;" onclick="adminLogin()" onerror="this.src='https://placehold.co/80'">
-            <div onclick="adminLogin()" style="cursor: pointer;">
-                <h1 class="brand-name">Hatimi Hardware</h1>
-                <p class="tagline">Premium Handles • Auto Hinges • Adhesives</p>
-            </div>
+    <div class="premium-header no-print">
+    
+    <div class="brand-section">
+        <img src="logo.png" alt="Hatimi Hardware" class="brand-logo">
+        <div class="brand-text">
+            <h2>HATIMI HARDWARE</h2>
+            <p>Premium Handles • Auto Hinges • Adhesives</p>
         </div>
-        <div class="global-nav no-print">
-            <a href="https://hatim-mullawala.github.io/Furniture-Fittings/" class="nav-link active-nav">🛋️ Furniture</a>
-            <a href="https://hatim-mullawala.github.io/Wholesale-Catalogue/" class="nav-link">📦 Wholesale</a>
-            <a href="https://hatim-mullawala.github.io/Hatimi-Hardware-Catalogue/" class="nav-link">🛠️ Tools</a>
-        </div>
-        <button onclick="location.reload()" style="background:none; border:none; cursor:pointer; font-size:26px; color:#b38728;" class="no-print">↻</button>
-        <div class="action-buttons">
-            <button class="icon-btn" onclick="location.reload()" title="Refresh Catalog">
-                <svg width="22" height="22" viewBox="0 0 24 24"><path fill="#b38728" d="M12,18A6,6 0 0,1 6,12C6,11 6.25,10.03 6.7,9.2L5.24,7.74C4.46,8.97 4,10.43 4,12A8,8 0 0,0 12,20V23L16,19L12,15V18M12,4V1L8,5L12,9V6A6,6 0 0,1 18,12C18,13 17.75,13.97 17.3,14.8L18.76,16.26C19.54,15.03 20,13.57 20,12A8,8 0 0,0 12,4Z"/></svg>
-            </button>
-            <button class="icon-btn" onclick="window.print()" title="Download PDF">
-                <svg width="22" height="22" viewBox="0 0 24 24"><path fill="#b38728" d="M18,3H6V7H18M19,12A1,1 0 0,1 18,11A1,1 0 0,1 19,10A1,1 0 0,1 20,11A1,1 0 0,1 19,12M16,19H8V14H16M19,8H5A3,3 0 0,0 2,11V17H6V21H18V17H22V11A3,3 0 0,0 19,8Z"/></svg>
-            </button>
-        </div>
-    </header>
+    </div>
+
+    <div class="nav-section">
+        <button class="nav-pill active">🛋️ Furniture</button>
+        <button class="nav-pill">📦 Wholesale</button>
+        <button class="nav-pill">🛠️ Tools</button>
+    </div>
+
+    <div class="action-section">
+        <button class="icon-btn" onclick="location.reload()" title="Refresh Catalog">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 2v6h-6"></path>
+                <path d="M3 12a9 9 0 1 0 2.13-5.88L21 8"></path>
+            </svg>
+        </button>
+        
+        <button class="icon-btn" onclick="window.print()" title="Print Catalog">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+        </button>
+    </div>
+</div>
     <div id="catalog-container"></div>
 </div>
 
@@ -599,12 +692,12 @@ function openModal(name, cat, param, isAutoHinge) {
                 const displayCol = isAutoHinge ? item.brand : size;
                 html += `
                 <tr style="border-bottom: 1px solid #f1f5f9;">
-                    <td style="padding:14px 5px; text-align:center;"><input type="checkbox" class="row-select" onchange="calculateOrderTotal()" style="transform:scale(1.3); cursor:pointer;"></td>
+                    <td style="padding:14px 5px; text-align:center;"><input type="checkbox" class="row-select" data-brand="${item.brand || ''}" data-finish="${color}" onchange="calculateOrderTotal()" style="transform:scale(1.3); cursor:pointer;"></td>
                     <td style="padding:14px 5px; font-weight:800; color:#334155; font-size:15px;" class="row-spec-name">${displayCol}</td>
                     <td style="padding:14px 5px; color:#64748b; font-weight:600;" class="row-mrp" data-mrp="${price}">₹${price}</td>
                     <td style="padding:14px 5px;"><input type="number" class="row-disc" value="0" oninput="calculateOrderTotal()" style="width:50px; text-align:center; border:1px solid #cbd5e1; border-radius:6px; padding:4px;"> %</td>
                     <td style="padding:14px 5px; display:flex; align-items:center; gap:5px; justify-content:center;">
-                        <input type="number" class="row-qty" value="1" oninput="calculateOrderTotal()" style="width:50px; text-align:center; border:1px solid #cbd5e1; border-radius:6px; padding:4px;">
+                        <input type="number" class="row-qty" value="1" oninput="calculateOrderTotal()" style="width: 50px !important; text-align: center; border: 1px solid #ccc; border-radius: 4px; padding: 4px; font-weight: bold; outline: none;">
                         <span class="row-unit" style="font-size:11px; color:#94a3b8; font-weight:700;">pcs</span>
                     </td>
                     <td style="padding:14px 5px; text-align:right; font-weight:900; color:#b38728; font-size:16px;" class="row-final">₹0</td>
@@ -615,6 +708,7 @@ function openModal(name, cat, param, isAutoHinge) {
         document.getElementById('modal-table-body').innerHTML = html;
         document.getElementById('order-modal-overlay').style.display = "flex"; 
         calculateOrderTotal();
+        syncModalToCart();
     } catch (e) { console.error(e); }
 }
 // --- 2. THE CALCULATION ENGINE ---
@@ -642,6 +736,12 @@ function calculateOrderTotal() {
     });
 
     document.getElementById('modal-grand-total').innerText = '₹' + Math.round(grandTotal);
+
+    // ---> THIS IS THE MISSING LINK! <---
+    // Every time math happens, it instantly tells the Global Cart to update too
+    if (typeof syncModalToCart === "function") {
+        syncModalToCart(); 
+    }
 }
 // --- 4. BULK UTILITIES ---
 function applyBulkDiscount() {
@@ -769,6 +869,165 @@ function filterCategoryCards(filterType, btn) {
         }
     });
 }
+// 1. The Global Memory Bank
+let globalCart = {};
+
+// --- 3. THE CART SCANNER (BRAND & FINISH FIXED!) ---
+function syncModalToCart() {
+    const titleEl = document.getElementById('modal-title') || document.getElementById('modalTitle');
+    const prodName = titleEl ? titleEl.innerText : "Product";
+
+    const rows = document.querySelectorAll('#modal-table-body tr');
+    
+    rows.forEach(row => {
+        const checkbox = row.querySelector('.row-select');
+        const qtyInput = row.querySelector('.row-qty');
+        
+        if (checkbox && qtyInput) {
+            const sizeEl = row.querySelector('.row-spec-name');
+            const size = sizeEl ? sizeEl.innerText : "Standard";
+            
+            // NEW: Grab the exact Brand and Finish directly from the checkbox!
+            const prodBrand = checkbox.getAttribute('data-brand') || "";
+            let prodFinish = checkbox.getAttribute('data-finish') || "";
+            
+            // Clean up the finish so it doesn't say "Standard" on simple items
+            if (prodFinish === "Standard") prodFinish = "";
+
+            const mrpEl = row.querySelector('.row-mrp');
+            const mrp = mrpEl ? (parseFloat(mrpEl.getAttribute('data-mrp')) || 0) : 0;
+            
+            const discInput = row.querySelector('.row-disc');
+            const disc = discInput ? (parseFloat(discInput.value) || 0) : 0;
+            
+            const finalUnitPrice = mrp - (mrp * (disc / 100));
+            const qty = parseInt(qtyInput.value) || 0;
+            
+            // Make a unique key for the cart
+            const itemKey = `${prodBrand}|${prodName}|${size}|${prodFinish}`; 
+
+            if (checkbox.checked && qty > 0) {
+                globalCart[itemKey] = {
+                    brand: prodBrand, 
+                    name: prodName, 
+                    finish: prodFinish, // Saves the true finish!
+                    size: size,
+                    price: Math.round(finalUnitPrice),
+                    mrpTotal: Math.round(mrp * qty),
+                    qty: qty, 
+                    total: Math.round(finalUnitPrice * qty)
+                };
+            } else {
+                delete globalCart[itemKey];
+            }
+        }
+    });
+    
+    refreshCartUI();
+}
+// 3. Updates the Premium Footer
+function refreshCartUI() {
+    const cartBar = document.getElementById('globalCartBar');
+    let totalQty = 0, grandTotal = 0;
+
+    for (const key in globalCart) {
+        totalQty += globalCart[key].qty;
+        grandTotal += globalCart[key].total;
+    }
+
+    if (totalQty > 0) {
+        cartBar.style.display = 'flex'; 
+        document.getElementById('cartItemCount').innerText = `${totalQty} ITEMS SELECTED`;
+        document.getElementById('cartTotalValue').innerHTML = `<span>₹</span>${grandTotal.toFixed(2)}`;
+    } else {
+        cartBar.style.display = 'none'; 
+    }
+}
+
+// --- 4. THE PROFESSIONAL WHATSAPP GENERATOR (WITH SAVINGS!) ---
+function sendGlobalWhatsAppOrder() {
+    let msg = "📦 *NEW ORDER - HATIMI HARDWARE* 📦\n";
+    msg += "----------------------------------------\n\n";
+    
+    let finalTotal = 0;
+    let originalTotalMRP = 0; // <-- NEW: Tracks the total before discounts
+
+    for (const key in globalCart) {
+        const item = globalCart[key];
+        
+        let titleLine = "";
+        if (item.brand && item.brand.trim() !== "") {
+            titleLine = `*${item.brand} - ${item.name}*`;
+        } else {
+            titleLine = `*${item.name}*`;
+        }
+        
+        msg += `🔹 ${titleLine}\n`;
+        
+        if (item.finish && item.finish !== "undefined") {
+            msg += `     Finish: ${item.finish}\n`;
+        }
+        
+        msg += `     Size: ${item.size}\n`;
+        msg += `     Qty: ${item.qty} pcs\n`;
+        
+        const formattedPrice = item.price.toLocaleString('en-IN');
+        const formattedSubtotal = item.total.toLocaleString('en-IN');
+        
+        msg += `     Price: ₹${formattedPrice}/pc\n`;
+        msg += `     Subtotal: *₹${formattedSubtotal}*\n\n`;
+        
+        finalTotal += item.total;
+        
+        // Adds up the original MRP safely
+        originalTotalMRP += (item.mrpTotal || item.total); 
+    }
+
+    const formattedGrandTotal = finalTotal.toLocaleString('en-IN');
+    
+    // <-- NEW: Calculate how much they saved! -->
+    const totalSaved = originalTotalMRP - finalTotal;
+
+    msg += `----------------------------------------\n`;
+    
+    // Only show "You Saved" if they actually got a discount
+    if (totalSaved > 0) {
+        const formattedSaved = totalSaved.toLocaleString('en-IN');
+        msg += `🎉 *YOU SAVED: ₹${formattedSaved}* 🎉\n`;
+    }
+
+    msg += `🧾 *GRAND TOTAL: ₹${formattedGrandTotal}*\n`;
+    msg += `----------------------------------------\n`;
+
+    const phone = "918109539453"; 
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
+}
+// --- 5. CANCEL ORDER / CLEAR CART ---
+function clearGlobalCart() {
+    // 1. Delete everything from the memory bank
+    globalCart = {};
+    
+    // 2. Uncheck all the boxes
+    const checkboxes = document.querySelectorAll('.row-select');
+    checkboxes.forEach(box => {
+        box.checked = false;
+    });
+
+    // 3. Reset quantities back to 1 and discounts back to 0
+    const qtyInputs = document.querySelectorAll('.row-qty');
+    qtyInputs.forEach(input => { input.value = 1; });
+    
+    const discInputs = document.querySelectorAll('.row-disc');
+    discInputs.forEach(input => { input.value = 0; });
+    
+    // 4. Update the totals and hide the cart bar
+    if (typeof calculateOrderTotal === "function") {
+        calculateOrderTotal();
+    }
+    
+    refreshCartUI();
+}
 loadFurnitureData();
 </script>
 
@@ -787,6 +1046,30 @@ loadFurnitureData();
         <button onclick="verifyAdmin()" style="width: 100%; background: var(--primary-gold); color: white; padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px;">LOGIN TO DASHBOARD</button>
         <p id="loginError" style="color: #e74c3c; font-size: 13px; margin-top: 15px; display: none;">❌ Incorrect password, try again.</p>
     </div>
+</div>
+<div id="globalCartBar" class="global-cart-bar no-print">
+    <div class="cart-info">
+        <span id="cartItemCount" class="cart-items-text">0 ITEMS SELECTED</span>
+        <span id="cartTotalValue" class="cart-total-text"><span>₹</span>0</span>
+    </div>
+    
+    <div style="display: flex; gap: 12px; align-items: center;">
+        <button onclick="sendGlobalWhatsAppOrder()" class="btn-checkout">
+            SEND ORDER
+        </button>
+        
+        <button onclick="clearGlobalCart()" class="btn-clear" title="Clear Entire Cart">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+        </button>
+    </div>
+</div>
+    </div>
+</div>
 </div>
 </body>
 </html>
