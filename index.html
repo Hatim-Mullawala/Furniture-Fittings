@@ -368,6 +368,104 @@
     }
     .row-unit { display: none; } /* Hide the word "pcs" on mobile to save space */
 }
+/* --- 8. PRODUCT GRID & CARDS --- */
+.catalog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* Auto-adjusts columns! */
+    gap: 25px;
+    padding: 20px 30px 100px 30px; /* 100px bottom padding so the cart doesn't cover the last row */
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.product-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    border-color: #b38728;
+    box-shadow: 0 10px 25px rgba(179, 135, 40, 0.15);
+}
+
+.card-img-container {
+    width: 100%;
+    height: 180px;
+    background: #f8fafc;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+    box-sizing: border-box;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.card-img-container img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.card-details {
+    padding: 15px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.card-brand {
+    font-size: 11px;
+    color: #b38728;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+}
+
+.card-title {
+    font-size: 16px;
+    color: #1e293b;
+    font-weight: 800;
+    margin: 0 0 15px 0;
+}
+
+.card-btn {
+    margin-top: auto;
+    background: #f8fafc;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 13px;
+    transition: all 0.3s ease;
+}
+
+.product-card:hover .card-btn {
+    background: #b38728;
+    color: white;
+    border-color: #b38728;
+}
+
+/* Mobile Fixes for the Grid */
+@media (max-width: 768px) {
+    .catalog-grid {
+        grid-template-columns: repeat(2, 1fr); /* 2 columns on mobile */
+        gap: 10px;
+        padding: 10px 10px 100px 10px;
+    }
+    .card-img-container { height: 120px; }
+    .card-title { font-size: 13px; }
+    .card-btn { font-size: 11px; padding: 8px; }
+}
     </style>
 </head>
 <body>
@@ -394,9 +492,9 @@
     </div>
 
     <div class="nav-section">
-        <button class="nav-pill active">🛋️ Furniture</button>
-        <button class="nav-pill">📦 Wholesale</button>
-        <button class="nav-pill">🛠️ Tools</button>
+        <button class="nav-pill active" onclick="switchTab('Furniture', this)">🛋️ Furniture</button>
+        <button class="nav-pill" onclick="switchTab('Wholesale', this)">📦 Wholesale</button>
+        <button class="nav-pill" onclick="switchTab('Tools', this)">🛠️ Tools</button>
     </div>
 
     <div class="action-section">
@@ -416,7 +514,8 @@
         </button>
     </div>
 </div>
-    <div id="catalog-container"></div>
+    <div id="catalog-container" class="catalog-grid">
+    </div>
 </div>
 
 <div id="order-modal-overlay" class="modal">
@@ -1085,6 +1184,93 @@ function clearGlobalCart() {
     
     refreshCartUI();
 }
+// --- 7. CATEGORY TAB SWITCHER ---
+function switchTab(categoryName, clickedButton) {
+    // 1. Remove the gold 'active' highlight from ALL buttons
+    const allPills = document.querySelectorAll('.nav-pill');
+    allPills.forEach(pill => {
+        pill.classList.remove('active');
+    });
+
+    // 2. Add the gold highlight ONLY to the button you just clicked
+    clickedButton.classList.add('active');
+
+    // 3. TELL YOUR CATALOG TO UPDATE!
+    // -> NOTE: Replace 'renderCatalog' below with whatever your actual 
+    // function is called that draws your products onto the screen!
+    
+    // renderCatalog(categoryName);  <-- Uncomment and fix this line!
+    
+    console.log("Category switched to: " + categoryName);
+}
+// --- 8. THE FRONT PAGE RENDERER ---
+function renderCatalog(categoryFilter) {
+    const container = document.getElementById('catalog-container');
+    container.innerHTML = ''; // Clear the current grid
+    
+    // Safety check: Make sure your data actually exists!
+    if (typeof allProducts === 'undefined' || allProducts.length === 0) {
+        container.innerHTML = '<h3 style="text-align:center; color:#64748b; width:100%; grid-column: 1 / -1;">Loading products...</h3>';
+        return;
+    }
+
+    // 1. We only want to show ONE card per unique product group on the front page
+    // (Otherwise it would show 50 cards for 50 different sizes of the same handle)
+    let uniqueProducts = [];
+    let seenNames = new Set();
+
+    allProducts.forEach(prod => {
+        // Assume 'prod.cat' matches your category buttons (e.g., "Furniture", "Tools")
+        // If "All" or if it matches the tab clicked, process it
+        if (!categoryFilter || categoryFilter === 'All' || (prod.cat && prod.cat.toLowerCase().includes(categoryFilter.toLowerCase()))) {
+            
+            // Only add the product if we haven't drawn a card for this name yet
+            if (!seenNames.has(prod.name)) {
+                seenNames.add(prod.name);
+                uniqueProducts.push(prod);
+            }
+        }
+    });
+
+    // 2. Build the HTML for the cards
+    if (uniqueProducts.length === 0) {
+        container.innerHTML = '<h3 style="text-align:center; color:#64748b; width:100%; grid-column: 1 / -1;">No products found in this category.</h3>';
+        return;
+    }
+
+    let html = '';
+    uniqueProducts.forEach(prod => {
+        // Generate the image path based on the name (matching your modal logic)
+        const imgSrc = `furniture-img/${prod.name.toLowerCase().replace(/[,\s./_]+/g, '-')}.jpg`;
+        
+        // Setup the exact parameters your openModal needs!
+        const isAutoHinge = (prod.cat && prod.cat.toLowerCase().includes('hinge'));
+        const param = isAutoHinge ? prod.specs : prod.brand;
+        
+        // The safe click handler
+        const clickAction = `openModal('${encodeURIComponent(prod.name)}', '${encodeURIComponent(prod.cat || '')}', '${encodeURIComponent(param || '')}', ${isAutoHinge})`;
+
+        html += `
+        <div class="product-card" onclick="${clickAction}">
+            <div class="card-img-container">
+                <img src="${imgSrc}" onerror="this.src='https://placehold.co/200x200/f8fafc/b38728?text=Image+Coming+Soon'; this.onerror=null;">
+            </div>
+            <div class="card-details">
+                <div class="card-brand">${prod.brand || 'Premium Quality'}</div>
+                <h3 class="card-title">${prod.name}</h3>
+                <div class="card-btn">SELECT SIZES</div>
+            </div>
+        </div>`;
+    });
+
+    container.innerHTML = html;
+}
+
+// 4. Start the engine when the page loads!
+window.onload = function() {
+    // Renders everything when the site first opens
+    renderCatalog('Furniture'); // Defaults to Furniture Tab
+};
 loadFurnitureData();
 </script>
 
