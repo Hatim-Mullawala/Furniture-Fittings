@@ -77,54 +77,59 @@
 }
 .whatsapp-btn:hover { background: #20ba56; transform: translateY(-2px); }
 
-/* --- THE MOBILE APP VIEW MAGIC --- */
+/* --- THE UNIFIED MOBILE APP VIEW MAGIC --- */
 @media screen and (max-width: 768px) {
-    /* 1. Make the modal take up the FULL phone screen */
+    /* Keep your existing header fixes */
+    .mobile-call-btn { display: flex; }
+    .main-wrapper { padding: 15px; margin: 10px; }
+    .catalog-header { flex-direction: column; text-align: center; }
+    .brand-name { font-size: 26px; }
+    .search-box { width: 90%; }
+    .footer-container { grid-template-columns: 1fr; }
+
+    /* 1. Modal App View Full Screen */
     .modal-content {
-        width: 100% !important;
-        height: 100vh !important;
-        max-height: 100vh !important;
-        border-radius: 0 !important;
-        padding: 15px 5px 80px 5px !important; /* Bottom padding for sticky footer */
-        margin: 0 !important;
+        width: 100% !important; height: 100vh !important; max-height: 100vh !important;
+        border-radius: 0 !important; padding: 15px 5px 80px 5px !important; margin: 0 !important;
     }
 
-    #modal-title { font-size: 20px !important; margin-left: 10px; }
-    #modal-subtitle { margin-left: 10px; }
-
-    /* 2. Squeeze the Table neatly without scrolling sideways */
-    .modal-table { display: table !important; width: 100% !important; table-layout: fixed; }
-    .modal-table th, .modal-table td { 
-        padding: 10px 2px !important; /* Tiny padding */
-        font-size: 10px !important;  /* Tiny text so it fits */
-        text-align: center;
-        word-wrap: break-word;
+    /* 2. THE BUG KILLER: Stop Handles and Tandems from side-scrolling */
+    .modal-table {
+        display: table !important; 
+        width: 100% !important; 
+        table-layout: fixed !important;
+        white-space: normal !important; /* KILLS THE OLD SIDE-SCROLLING BUG */
     }
     
-    /* Give the Spec Name more room to read */
+    .modal-table th, .modal-table td {
+        padding: 10px 2px !important; 
+        font-size: 10px !important; 
+        text-align: center;
+        white-space: normal !important; /* Forces long Tandem names to wrap neatly! */
+        word-wrap: break-word !important;
+    }
+
+    /* 3. Give the Spec Name more room to breathe */
     .modal-table th:nth-child(2), .modal-table td:nth-child(2) { width: 35%; text-align: left; }
     .row-spec-name { font-size: 11px !important; font-weight: 700; line-height: 1.2; }
-    
-    /* 3. Make Inputs narrow but tall enough for thumbs */
-    .row-disc, .row-qty { 
-        width: 32px !important; 
-        padding: 6px 2px !important; 
-        font-size: 12px !important; 
-        border-radius: 4px;
+
+    /* 4. Fix the Handle "Finish" Image Row from stretching the screen */
+    .modal-table td[colspan="6"] > div {
+        gap: 10px !important; /* Shrinks the huge gap between image and text */
+    }
+    .modal-table td[colspan="6"] img {
+        width: 60px !important; height: 45px !important; /* Slightly smaller image for mobile */
     }
 
-    /* 4. Fix Checkbox alignment */
+    /* 5. Inputs & Checkboxes */
+    .row-disc, .row-qty { width: 32px !important; padding: 6px 2px !important; font-size: 12px !important; border-radius: 4px; }
     .row-select { transform: scale(1.2) !important; margin: 0; }
 
-    /* 5. STICKY FOOTER: WhatsApp button hovers at the bottom of the screen! */
+    /* 6. Sticky Footer */
     .modal-footer {
-        position: fixed;
-        bottom: 0; left: 0; width: 100%;
-        background: white; padding: 12px 15px;
-        box-shadow: 0 -5px 15px rgba(0,0,0,0.15);
-        justify-content: space-between;
-        margin: 0; border: none; z-index: 1000;
-        box-sizing: border-box;
+        position: fixed; bottom: 0; left: 0; width: 100%; background: white;
+        padding: 12px 15px; box-shadow: 0 -5px 15px rgba(0,0,0,0.15);
+        justify-content: space-between; margin: 0; border: none; z-index: 1000; box-sizing: border-box;
     }
     .whatsapp-btn { padding: 10px 15px; font-size: 14px; }
 }
