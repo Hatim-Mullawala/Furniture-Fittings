@@ -311,6 +311,63 @@
 }
 .icon-btn:hover { border-color: #b38728; background: #fffbeb; transform: translateY(-2px); }
 .icon-btn svg { width: 18px; height: 18px; }
+/* =========================================
+   📱 MOBILE RESPONSIVENESS (Phones & Tablets)
+   ========================================= */
+@media (max-width: 768px) {
+    /* 1. Fix the Header (Stack it neatly) */
+    .premium-header {
+        flex-direction: column;
+        padding: 15px 10px;
+        gap: 15px;
+    }
+    .brand-section {
+        justify-content: center;
+        text-align: center;
+    }
+    .brand-logo { height: 45px; } /* Slightly smaller logo */
+    .brand-text h2 { font-size: 20px; }
+    
+    /* 2. Fix the Navigation (Allow buttons to wrap to the next line) */
+    .nav-section {
+        flex-wrap: wrap;
+        justify-content: center;
+        border-radius: 15px;
+    }
+    .nav-pill {
+        padding: 8px 16px;
+        font-size: 11px;
+    }
+
+    /* 3. Fix the Global Cart Bar (Shrink text and buttons to fit) */
+    .global-cart-bar {
+        padding: 10px 15px;
+    }
+    .cart-total-text { font-size: 20px; }
+    .cart-items-text { font-size: 10px; }
+    
+    .btn-checkout {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+    .btn-clear {
+        width: 40px; height: 40px;
+    }
+    .btn-clear svg { width: 16px; height: 16px; }
+
+    /* 4. Fix the Modal Table (Shrink padding and inputs so they don't overflow) */
+    #modal-table-body td {
+        padding: 10px 2px !important; /* Less empty space between columns */
+    }
+    .row-spec-name { font-size: 13px !important; }
+    .row-mrp, .row-final { font-size: 13px !important; }
+    .row-qty, .row-disc { 
+        width: 40px !important; /* Smaller input boxes */
+        font-size: 13px !important; 
+        padding: 2px !important;
+    }
+    .row-unit { display: none; } /* Hide the word "pcs" on mobile to save space */
+}
     </style>
 </head>
 <body>
