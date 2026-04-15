@@ -742,11 +742,48 @@ function openModal(name, cat, param, isAutoHinge) {
                         </td>
                     </tr>`;
                     lastGroup = color;
-                } else if (!isHandle && !isClean) {
-                    let mainSize = cleanSpec.includes('x') ? cleanSpec.split('x')[1].trim() : cleanSpec;
-                    if (mainSize !== lastGroup) {
-                        html += `<tr style="background: #f1f5f9;"><td colspan="6" style="padding:10px; text-align:center; border-left: 5px solid #b38728;"><span style="font-size:12px; font-weight:900; color:#475569; letter-spacing:1px; text-transform:uppercase;">${mainSize} SERIES</span></td></tr>`;
-                        lastGroup = mainSize;
+             } else if (!isHandle && !isClean) {
+                    let headerText = "";
+
+                    // 1. SPECIFIC RULE: Bottle Pullouts (Group by Middle Size)
+                    if (name.toLowerCase().includes("bottle pullout")) {
+                        // Splits "4X20X17" into ["4", "20", "17"] and takes index 1 (the middle one)
+                        let parts = cleanSpec.split(/[xX]/);
+                        if (parts.length >= 2) {
+                            let middleSize = parts[1].trim();
+                            if (middleSize !== lastGroup) {
+                                headerText = `${middleSize} DEPTH SERIES`;
+                                lastGroup = middleSize;
+                            }
+                        }
+                    } 
+                    // 2. SPECIFIC RULE: Kitchen Trolleys (Group by First Size)
+                    else if (catLower.includes("kitchen trolley")) {
+                        let sizePrefix = cleanSpec.split(/[xX]/)[0].trim();
+                        if (sizePrefix !== lastGroup) {
+                            headerText = `${sizePrefix} MM SERIES`;
+                            lastGroup = sizePrefix;
+                        }
+                    } 
+                    // 3. DEFAULT RULE: All other categories
+                    else {
+                        let mainSize = cleanSpec.includes('x') ? cleanSpec.split('x')[1].trim() : cleanSpec;
+                        if (mainSize !== lastGroup) {
+                            headerText = `${mainSize} SERIES`;
+                            lastGroup = mainSize;
+                        }
+                    }
+
+                    // Inject the row if we found a new header
+                    if (headerText !== "") {
+                        html += `
+                        <tr style="background: #f1f5f9; border-left: 5px solid #b38728;">
+                            <td colspan="6" style="padding:10px; text-align:center;">
+                                <span style="font-size:12px; font-weight:900; color:#475569; letter-spacing:1px; text-transform:uppercase;">
+                                    ${headerText}
+                                </span>
+                            </td>
+                        </tr>`;
                     }
                 }
 
