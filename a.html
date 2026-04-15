@@ -298,7 +298,8 @@
 }
 .nav-pill:hover { color: #1e293b; background: #f1f5f9; }
 .nav-pill.active { 
-    background: #b38728; color: white; 
+    background: #b38728 !important; /* Force the gold color */
+    color: white !important; 
     box-shadow: 0 4px 10px rgba(179, 135, 40, 0.3); 
 }
 
@@ -393,12 +394,13 @@
         </div>
     </div>
 
-    <div class="nav-section">
-        <button class="nav-pill active">🛋️ Furniture</button>
-        <button class="nav-pill">📦 Wholesale</button>
-        <button class="nav-pill">🛠️ Tools</button>
-    </div>
-
+   <div class="nav-section">
+    <button id="nav-furniture" class="nav-pill active" onclick="window.location.href='https://hatim-mullawala.github.io/Furniture-Fittings/'">🛋️ Furniture</button>
+    
+    <button id="nav-wholesale" class="nav-pill" onclick="window.location.href='https://hatim-mullawala.github.io/Wholesale-Catalogue/'">📦 Wholesale</button>
+    
+    <button id="nav-tools" class="nav-pill" onclick="window.location.href='https://hatim-mullawala.github.io/Hatimi-Hardware-Catalogue/'">🛠️ Tools</button>
+</div>
     <div class="action-section">
         <button class="icon-btn" onclick="location.reload()" title="Refresh Catalog">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -531,8 +533,10 @@ async function loadFurnitureData() {
         const formattedTime = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
         
         document.getElementById('syncStatus').innerHTML = `🟢 Live Inventory Sync: <b>${formattedDate} at ${formattedTime}</b>`;
-
-    } catch (error) {
+        // Inside the loadFurnitureData function, at the end of the try block:
+document.getElementById('nav-furniture').classList.add('active');
+    } 
+    catch (error) {
         console.error("Data Load Error:", error);
         document.getElementById('syncStatus').innerHTML = "<span style='color:red;'>🔴 Sync Failed. Check Connection.</span>";
         document.getElementById('catalog-container').innerHTML = "<p style='color:red; text-align:center;'>Error loading data.</p>";
@@ -995,7 +999,8 @@ function refreshCartUI() {
     if (totalQty > 0) {
         cartBar.style.display = 'flex'; 
         document.getElementById('cartItemCount').innerText = `${totalQty} ITEMS SELECTED`;
-        document.getElementById('cartTotalValue').innerHTML = `<span>₹</span>${grandTotal.toFixed(2)}`;
+        // Find this line in your refreshCartUI function:
+document.getElementById('cartTotalValue').innerHTML = `<span>₹</span>${Math.round(grandTotal).toLocaleString('en-IN')}`;
     } else {
         cartBar.style.display = 'none'; 
     }
