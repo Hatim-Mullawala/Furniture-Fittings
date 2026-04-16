@@ -23,12 +23,56 @@
         .icon-btn { background: white; border: 1px solid #f0f0f0; border-radius: 50%; width: 50px; height: 50px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
 
         .category-header { background: #222; color: #fff; padding: 15px 25px; font-size: 18px; font-weight: 700; text-transform: uppercase; margin-top: 50px; border-left: 10px solid var(--primary-gold); border-radius: 4px; }
-        
-        .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 15px 0; }
-        @media (min-width: 768px) { .product-grid { grid-template-columns: repeat(3, 1fr); } }
-        @media (min-width: 1024px) { .product-grid { grid-template-columns: repeat(5, 1fr); gap: 15px; } }
+        /* --- 1. STRENGTHENED PRODUCT GRID --- */
+.product-grid { 
+    display: grid !important; 
+    /* This ensures cards stay in their own container and don't "climb" */
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 20px; 
+    padding: 20px 0; 
+    width: 100%;
+    clear: both; /* Prevents floating elements from interfering */
+}
 
-        .product-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; text-align: center; transition: all 0.3s ease; display: flex; flex-direction: column; justify-content: space-between; height: 300px; }
+@media (min-width: 768px) { 
+    .product-grid { grid-template-columns: repeat(3, 1fr); } 
+}
+
+@media (min-width: 1024px) { 
+    .product-grid { grid-template-columns: repeat(5, 1fr); } 
+}
+
+/* --- 2. SERIES HEADING (The Divider) --- */
+/* This styling ensures the Silver/Platinum bar breaks the flow correctly */
+.series-banner {
+    background: #334155; 
+    color: white; 
+    padding: 12px 20px; 
+    margin: 30px 0 10px 0; 
+    border-radius: 6px; 
+    font-weight: 900; 
+    letter-spacing: 2px; 
+    text-transform: uppercase; 
+    font-size: 14px; 
+    border-left: 6px solid var(--primary-gold);
+    width: 100%;
+    display: block;
+    box-sizing: border-box;
+}
+
+/* --- 3. PRODUCT CARD ALIGNMENT --- */
+.product-card { 
+    background: white; 
+    border: 1px solid #e2e8f0; 
+    border-radius: 12px; 
+    padding: 15px; 
+    text-align: center; 
+    transition: all 0.3s ease; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: space-between; 
+    height: 320px; /* Locked height prevents "staircase" effect */
+}
         .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.08); border-color: var(--primary-gold); }
 
         .img-holder { height: 130px; width: 100%; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; background: #fbfbfb; border-radius: 8px; overflow: hidden; }
@@ -438,7 +482,7 @@
                 <option value="pcs">pcs</option><option value="box">box</option><option value="kg">kg</option>
             </select>
         </div>
-
+<div id="modal-filter-container"></div>
         <div style="overflow-x: auto;">
             <table class="modal-table" style="width: 100%; border-collapse: collapse;">
                 <thead>
@@ -502,14 +546,13 @@ function parseCSVLine(line) {
     }
     result.push(cell.trim()); return result;
 }
-
 async function loadFurnitureData() {
     try {
         const response = await fetch(furnitureSheetURL);
-        const csvText = await response.text();
-        const pRows = csvText.split(/\r?\n/).slice(1);
+        const data = await response.text();
+        const rows = data.split('\n').slice(1); // Skip header row
 
-        allProducts = pRows.map(row => {
+        allProducts = rows.map(row => {
             const c = parseCSVLine(row);
             if (c.length < 3) return null;
 
@@ -520,28 +563,24 @@ async function loadFurnitureData() {
                 name:  c[2] ? c[2].replace(/"/g, '').trim() : "Product",
                 specs: c[3] ? c[3].replace(/(^"|"$)/g, '').trim() : "",
                 mrp:   c[5] ? String(c[5]).replace(/[₹\s,"]/g, '').trim() : "0",
-                tag:   c[6] ? String(c[6]).toLowerCase().trim() : "" 
+                tag:   c[6] ? String(c[6]).toLowerCase().trim() : "",
+                // This captures your Series from Column H (Index 7)
+                series: c[7] ? c[7].replace(/"/g, '').trim() : "" 
             };
         }).filter(p => p !== null);
 
         console.log("Loaded Products:", allProducts);
+        document.getElementById('syncStatus').innerText = `Catalog Sync: ${new Date().toLocaleString()}`;
+        
+        // Now call the render function
         renderFrontPage(allProducts);
 
-        // --- NEW: LIVE TIME SYNC UPDATER ---
-        const now = new Date();
-        const formattedDate = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-        const formattedTime = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-        
-        document.getElementById('syncStatus').innerHTML = `🟢 Live Inventory Sync: <b>${formattedDate} at ${formattedTime}</b>`;
-        // Inside the loadFurnitureData function, at the end of the try block:
-document.getElementById('nav-furniture').classList.add('active');
-    } 
-    catch (error) {
-        console.error("Data Load Error:", error);
-        document.getElementById('syncStatus').innerHTML = "<span style='color:red;'>🔴 Sync Failed. Check Connection.</span>";
-        document.getElementById('catalog-container').innerHTML = "<p style='color:red; text-align:center;'>Error loading data.</p>";
+    } catch (error) {
+        console.error("Error loading CSV:", error);
+        document.getElementById('syncStatus').innerText = "❌ Sync Failed. Check Connection.";
     }
 }
+
 async function renderFrontPage(products) {
     const container = document.getElementById('catalog-container');
     if (!container) return;
@@ -550,84 +589,81 @@ async function renderFrontPage(products) {
     let currentCat = "";
     let html = "";
 
-    // Sort categories A-Z
     const sortedProducts = [...products].sort((a, b) => {
         const catA = String(a.cat || "").trim().toLowerCase();
         const catB = String(b.cat || "").trim().toLowerCase();
-        return catA.localeCompare(catB);
+        if (catA !== catB) return catA.localeCompare(catB);
+        const seriesA = String(a.series || "").trim().toLowerCase();
+        const seriesB = String(b.series || "").trim().toLowerCase();
+        return seriesA.localeCompare(seriesB);
     });
 
     for (const p of sortedProducts) {
         const catName = String(p.cat || "").trim();
         const catLower = catName.toLowerCase();
+        const seriesName = String(p.series || "").trim().toUpperCase();
+        
         const isAutoHinge = catLower.includes("auto hinge");
         const isHandle = catLower.includes("handle");
+        const isTrolley = catLower.includes("kitchen trolley");
 
-        const key = isAutoHinge 
-            ? `${catName}|${p.name}|${p.specs}` 
-            : `${catName}|${p.name}|${p.brand}`;
+        const key = isTrolley 
+            ? `${catName}|${seriesName}` 
+            : (isAutoHinge ? `${catName}|${p.name}|${p.specs}` : `${catName}|${p.name}|${p.brand}`);
         
         if (!seen.has(key)) {
-           if (catName !== currentCat) {
+            if (catName !== currentCat) {
                 if (html !== "") html += `</div></div>`; 
                 currentCat = catName;
-                html += `
-                <div class="category-group" style="margin-bottom: 50px;">
-                    <h2 class="category-header">${currentCat}</h2>`;
+                html += `<div class="category-group" style="margin-bottom: 50px; width: 100%; clear: both;">
+                            <h2 class="category-header">${currentCat}</h2>`;
                 
-                // INJECT FILTER TABS ONLY UNDER "HANDLES" CATEGORIES
-                if (currentCat.toLowerCase().includes("handle")) {
-                    html += `
-                    <div class="catalog-filters no-print">
-                        <button class="filter-btn active" onclick="filterCategoryCards('All', this)">All</button>
-                        <button class="filter-btn" onclick="filterCategoryCards('concealed', this)">Concealed</button>
-                        <button class="filter-btn" onclick="filterCategoryCards('profile', this)">Profile</button>
-                        <button class="filter-btn" onclick="filterCategoryCards('knob', this)">Knobs</button>
-                        <button class="filter-btn" onclick="filterCategoryCards('main door', this)">Main Door</button>
-                    </div>`;
+                if (isHandle) {
+                    html += `<div class="catalog-filters no-print">
+                                <button class="filter-btn active" onclick="filterCategoryCards('All', this)">All</button>
+                                <button class="filter-btn" onclick="filterCategoryCards('concealed', this)">Concealed</button>
+                                <button class="filter-btn" onclick="filterCategoryCards('profile', this)">Profile</button>
+                                <button class="filter-btn" onclick="filterCategoryCards('knob', this)">Knobs</button>
+                                <button class="filter-btn" onclick="filterCategoryCards('main door', this)">Main Door</button>
+                            </div>`;
                 }
-
                 html += `<div class="product-grid">`; 
             }
 
-            // 1. Clean all text for URLs (just like the manager)
+            const displayTitle = isTrolley ? `${seriesName} SERIES` : (isAutoHinge ? p.specs : p.name);
+            const displayBrand = isTrolley ? catName : (isAutoHinge ? p.name : p.brand);
+
             const nClean = String(p.name).toLowerCase().trim().replace(/[,\s./_]+/g, '-');
             const sClean = String(p.specs).toLowerCase().trim().replace(/[,\s./_]+/g, '-');
             const bClean = String(p.brand).toLowerCase().trim().replace(/[,\s./_]+/g, '-');
             const cClean = String(p.cat).toLowerCase().trim().replace(/[,\s./_]+/g, '-');
+            const sriesClean = seriesName.toLowerCase().trim().replace(/[,\s./_]+/g, '-');
 
-            // 2. The Upgraded Master Image Path Searcher (Now with .png!)
             const paths = isHandle 
-                ? [
-                    `furniture-img/${nClean}-combo.jpg`, 
-                    `furniture-img/${nClean}.jpg`,
-                    `furniture-img/${nClean}-combo.png`,
-                    `furniture-img/${nClean}.png`
-                  ] 
-                : [
-                    `furniture-img/${sClean}.jpg`,           // 1. Specs (JPG)
-                    `furniture-img/${bClean}-${nClean}.jpg`, // 2. Brand-Name (JPG)
-                    `furniture-img/${cClean}-${nClean}.jpg`, // 3. Category-Name (JPG)
-                    `furniture-img/${nClean}.jpg`,           // 4. Name Only (JPG)
-                    `furniture-img/${sClean}.png`,           // 5. Specs (PNG)
-                    `furniture-img/${bClean}-${nClean}.png`, // 6. Brand-Name (PNG)
-                    `furniture-img/${cClean}-${nClean}.png`, // 7. Category-Name (PNG)
-                    `furniture-img/${nClean}.png`            // 8. Name Only (PNG)
-                  ];
+                ? [`furniture-img/${nClean}-combo.jpg`, `furniture-img/${nClean}.jpg`] 
+                : (isTrolley ? [`furniture-img/${sriesClean}-series.jpg`, `furniture-img/${sriesClean}.jpg`] 
+                : [`furniture-img/${sClean}.jpg`, `furniture-img/${bClean}-${nClean}.jpg`, `furniture-img/${cClean}-${nClean}.jpg`, `furniture-img/${nClean}.jpg`]);
+
             const encN = encodeURIComponent(p.name).replace(/'/g, "%27");
             const encC = encodeURIComponent(catName).replace(/'/g, "%27");
             const encParam = isAutoHinge ? encodeURIComponent(p.specs).replace(/'/g, "%27") : encodeURIComponent(p.brand).replace(/'/g, "%27");
+            const encS = encodeURIComponent(seriesName).replace(/'/g, "%27");
             const imgId = `img-${Math.random().toString(36).substr(2, 5)}`;
+
+            let clickAction = isTrolley 
+                ? `openModal('', '${encC}', '', false, '${encS}')`
+                : `openModal('${encN}', '${encC}', '${encParam}', ${isAutoHinge}, '')`;
 
             const titleHTML = isAutoHinge
                 ? `<div style="font-size:12px; font-weight:600; color:#94a3b8; text-transform:uppercase;">${p.name}</div>
                    <div style="font-size:17px; font-weight:900; color:#1e293b; margin-top:5px;">${p.specs}</div>`
-                : `<div style="font-size:11px; color:#b38728; font-weight:900; text-transform:uppercase; margin-bottom:5px;">${p.brand}</div>
-                   <div style="font-size:15px; font-weight:800; color:#1e293b; line-height:1.2;">${p.name}</div>`;
-                html += `
+                : `<div style="font-size:11px; color:#b38728; font-weight:900; text-transform:uppercase; margin-bottom:5px;">${displayBrand}</div>
+                   <div style="font-size:15px; font-weight:800; color:#1e293b; line-height:1.2;">${displayTitle}</div>`;
+
+            html += `
             <div class="product-card" data-search-text="${p.rawSearch}" style="border-top: 3px solid #b38728;">
-                <div class="img-holder" onclick="openZoom(event, '${p.name.replace(/'/g, "\\'")}', this.querySelector('img').src)">
-                    <img id="${imgId}" src="https://placehold.co/300x300/f8fafc/b38728?text=${encodeURIComponent(p.name)}">
+                <div class="img-holder" onclick="openZoom(event, '${displayTitle.replace(/'/g, "\\'")}', this.querySelector('img').src)">
+                    <img id="${imgId}" src="https://placehold.co/300x300/f8fafc/b38728?text=${encodeURIComponent(displayTitle)}">
                 </div>
                 <div style="padding: 5px 0 15px;">
                     <div class="product-name" style="height:75px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
@@ -635,9 +671,7 @@ async function renderFrontPage(products) {
                     </div>
                 </div>
                 <div class="no-print">
-                    <button class="btn-view" onclick="openModal('${encN}', '${encC}', '${encParam}', ${isAutoHinge})">
-                        View Sizes & Prices
-                    </button>
+                    <button class="btn-view" onclick="${clickAction}">View Sizes & Prices</button>
                 </div>
             </div>`;
 
@@ -648,58 +682,131 @@ async function renderFrontPage(products) {
     if (html !== "") html += "</div></div>"; 
     container.innerHTML = html;
 }
-function tryLoadImage(idOrElement, urls) {
-    // This tells it to find the actual HTML image box!
+function tryLoadImage(idOrElement, urls, name) {
     const imgElement = typeof idOrElement === 'string' ? document.getElementById(idOrElement) : idOrElement;
-    
     if (!imgElement) return;
+
+    // We expand the search: if the code asks for 'photo.jpg', we also try 'photo.png'
+    let expandedUrls = [];
+    urls.forEach(u => {
+        expandedUrls.push(u);
+        if (u.endsWith('.jpg')) expandedUrls.push(u.replace('.jpg', '.png'));
+        if (u.endsWith('.png')) expandedUrls.push(u.replace('.png', '.jpg'));
+    });
+
     let index = 0;
     function attemptLoad() {
-        if (index < urls.length) {
+        if (index < expandedUrls.length) {
             const imgTester = new Image();
-            imgTester.onload = () => { imgElement.src = urls[index-1]; };
+            imgTester.onload = () => { 
+                imgElement.src = expandedUrls[index - 1];
+                imgElement.style.cursor = "zoom-in";
+                imgElement.onclick = (e) => {
+                    if(typeof openZoom === 'function') openZoom(e, name || 'Product Image', imgElement.src);
+                };
+            };
             imgTester.onerror = attemptLoad;
-            imgTester.src = urls[index++];
+            imgTester.src = expandedUrls[index++];
         } else { 
             imgElement.src = 'https://placehold.co/300x300/f8fafc/b38728?text=No+Photo'; 
         }
     }
     attemptLoad();
 }
-function openModal(name, cat, param, isAutoHinge) {
+function openModal(nameInput, cat, param, isAutoHinge, series) {
     try {
-        name = decodeURIComponent(name);
-        cat = decodeURIComponent(cat);
-        param = decodeURIComponent(param);
-        const catLower = cat.toLowerCase();
+        const catName = decodeURIComponent(cat);
+        const seriesName = decodeURIComponent(series || "");
+        const prodName = decodeURIComponent(nameInput || "");
+        const catLower = catName.toLowerCase();
+        const decodedParam = decodeURIComponent(param);
 
-        const items = allProducts.filter(p => 
-            p.name === name && p.cat === cat && (isAutoHinge ? p.specs === param : p.brand === param)
-        );
+        const items = allProducts.filter(p => {
+            const isMatchCat = p.cat === catName;
+            if (catLower.includes("kitchen trolley")) {
+                return isMatchCat && p.series.toUpperCase() === seriesName.toUpperCase();
+            } else {
+                return isMatchCat && p.name === prodName && (isAutoHinge ? p.specs === decodedParam : p.brand === decodedParam);
+            }
+        });
+
         if (items.length === 0) return;
 
-        const isHandle = catLower.includes("handle");
-        const isClean = catLower.includes("adhesive") || catLower.includes("nails") || catLower.includes("screws") || catLower.includes("channel") || catLower.includes("slide");
+        // --- NEW: PROFESSIONAL FILTER PILLS FOR TROLLEYS ---
+        let filterHTML = "";
+        if (catLower.includes("kitchen trolley")) {
+            const widths = Array.from(new Set(items.flatMap(item => 
+                String(item.specs || "").split(/[,，|]+/).map(s => s.toLowerCase().split('x')[0]?.trim())
+            ))).filter(Boolean).sort((a,b)=>a-b);
 
-        document.getElementById('modal-title').innerText = name;
+            const depths = Array.from(new Set(items.flatMap(item => 
+                String(item.specs || "").split(/[,，|]+/).map(s => s.toLowerCase().split('x')[1]?.trim())
+            ))).filter(Boolean).sort((a,b)=>a-b);
+
+            filterHTML = `
+            <div style="margin: 15px 0 25px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);" class="no-print">
+                <div style="position: relative; margin-bottom: 20px;">
+                    <input type="text" id="modalSearch" placeholder="🔍 Search basket type (e.g. Plain)..." 
+                        style="width: 100%; padding: 12px 15px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14px; outline: none; transition: 0.3s; box-sizing: border-box;"
+                        onfocus="this.style.borderColor='#b38728'" onblur="this.style.borderColor='#e2e8f0'" onkeyup="runCombinedModalFilter()">
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <span style="font-size: 10px; font-weight: 900; color: #b38728; letter-spacing: 1.5px; text-transform: uppercase; display: block; margin-bottom: 8px;">Filter by Width (Inch)</span>
+                    <div id="width-pills" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button class="filter-pill active" onclick="togglePill(this, 'width', '')">ALL</button>
+                        ${widths.map(w => `<button class="filter-pill" onclick="togglePill(this, 'width', '${w}')">${w}"</button>`).join('')}
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 10px;">
+                    <span style="font-size: 10px; font-weight: 900; color: #b38728; letter-spacing: 1.5px; text-transform: uppercase; display: block; margin-bottom: 8px;">Filter by Depth (Inch)</span>
+                    <div id="depth-pills" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button class="filter-pill active" onclick="togglePill(this, 'depth', '')">ALL</button>
+                        ${depths.map(d => `<button class="filter-pill" onclick="togglePill(this, 'depth', '${d}')">${d}"</button>`).join('')}
+                    </div>
+                </div>
+
+                <style>
+                    .filter-pill {
+                        background: #f8fafc; border: 1.5px solid #e2e8f0; color: #475569;
+                        padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 700;
+                        cursor: pointer; transition: all 0.2s ease;
+                    }
+                    .filter-pill:hover { border-color: #b38728; color: #b38728; }
+                    .filter-pill.active { background: #b38728 !important; border-color: #b38728 !important; color: white !important; box-shadow: 0 4px 8px rgba(179,135,40,0.2); }
+                </style>
+            </div>`;
+        }
+
+        const isHandle = catLower.includes("handle");
+        const isClean = catLower.includes("adhesive") || catLower.includes("nails") || catLower.includes("screws");
+
+        document.getElementById('modal-title').innerText = seriesName ? `${seriesName} SERIES` : prodName;
         const subtitle = document.getElementById('modal-subtitle');
         const colSpecs = document.getElementById('modal-col-specs');
 
         if (isHandle) {
             subtitle.innerText = "Select Finish & Size";
-            subtitle.style.display = "block";
             colSpecs.innerText = "Size Only";
-        } else if (isClean) {
-            subtitle.style.display = "none";
-            colSpecs.innerText = "Size / Specs";
+        } else if (isAutoHinge) {
+            subtitle.innerText = `Comparison: ${decodedParam}`;
+            colSpecs.innerText = "Brand Name";
         } else {
-            subtitle.innerText = isAutoHinge ? "Multi-Brand Comparison" : param;
-            subtitle.style.display = "block";
-            colSpecs.innerText = isAutoHinge ? "Brand" : "Size / Specs";
+            subtitle.innerText = catName;
+            colSpecs.innerText = "Size / Specs";
         }
+        
+        subtitle.innerText = isHandle ? "Select Finish & Size" : (isAutoHinge ? `Comparison: ${decodedParam}` : catName);
+subtitle.style.display = "block";
 
+const filterContainer = document.getElementById('modal-filter-container');
+if (filterContainer) {
+    filterContainer.innerHTML = filterHTML; // Injects the professional pills here
+}
         let html = "";
         let lastGroup = ""; 
+        let lastProductName = ""; 
 
         items.forEach((item) => {
             const specsArray = String(item.specs || "").split(/[,，|]+/);
@@ -708,32 +815,68 @@ function openModal(name, cat, param, isAutoHinge) {
             specsArray.forEach((fullSpec, idx) => {
                 const cleanSpec = fullSpec.trim();
                 if (!cleanSpec) return;
+
                 const price = parseFloat(pricesArray[idx] ? pricesArray[idx].trim().replace(/[₹\s,]/g,'') : pricesArray[0].trim().replace(/[₹\s,]/g,'')) || 0;
                 
                 let size = cleanSpec;
                 let color = "Standard";
-
                 if (isHandle && cleanSpec.includes("-")) {
                     const parts = cleanSpec.split("-");
                     size = parts[0].trim(); 
                     color = parts.slice(1).join("-").trim(); 
                 }
 
-                // --- FIXED: "NO-CUTTING" IMAGE HEADER ---
-                if (isHandle && color !== lastGroup) {
-                    const colorImg = `furniture-img/${name.toLowerCase().replace(/[,\s./_]+/g, '-')}-${color.toLowerCase().replace(/[,\s./_]+/g, '-')}.jpg`;
+                const rowVisibilityClass = catLower.includes("kitchen trolley") ? `class="trolley-row" data-name="${item.name.toLowerCase()}"` : "";
+
+                if (catLower.includes("tandem") || catLower.includes("channel") || catLower.includes("slide")) {
+                    let depth = cleanSpec.toLowerCase().includes('x') ? cleanSpec.split('x')[1].trim() : "";
+                    if (depth !== "" && depth !== lastGroup) {
+                        html += `
+                        <tr style="background: #334155; color: #ffffff;">
+                            <td colspan="6" style="padding:12px; text-align:center; font-weight:900; letter-spacing:2px; text-transform:uppercase; border-bottom: 2px solid #b38728;">
+                                📏 ${depth} INCH SERIES
+                            </td>
+                        </tr>`;
+                        lastGroup = depth;
+                    }
+                }
+                else if (catLower.includes("kitchen trolley") && item.name !== lastProductName) {
+                    const nClean = item.name.toLowerCase().trim().replace(/[,\s./_]+/g, '-');
+                    const sriesClean = (item.series || "").toLowerCase().trim().replace(/[,\s./_]+/g, '-');
+                    const trolleyImg = `furniture-img/${nClean}-${sriesClean}.jpg`;
+                    const trolleyPaths = [trolleyImg, `furniture-img/${nClean}.jpg`, trolleyImg.replace('.jpg', '.png')];
+                    const headerImgId = `header-img-${Math.random().toString(36).substr(2, 5)}`;
+
+                    html += `
+                    <tr class="trolley-header-row" data-name="${item.name.toLowerCase()}" style="background: #334155; color: #ffffff;">
+                        <td colspan="6" style="padding:15px 10px;">
+                            <div style="display:flex; align-items:center; justify-content:center; gap:20px;">
+                                <div style="background:#fff; padding:4px; border-radius:8px; display:flex; align-items:center; justify-content:center; width:65px; height:50px; overflow:hidden;">
+                                    <img id="${headerImgId}" src="https://placehold.co/60x45/f8fafc/b38728?text=..." style="max-width:100%; max-height:100%; object-fit:contain;">
+                                </div>
+                                <div style="text-align: left;">
+                                    <span style="font-size:10px; color:#b38728; display:block; text-transform:uppercase; letter-spacing:1px; font-weight:900;">PRODUCT</span>
+                                    <span style="font-weight:900; font-size:16px; text-transform:uppercase;">${item.name}</span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>`;
+                    setTimeout(() => { tryLoadImage(headerImgId, trolleyPaths, item.name); }, 50);
+                    lastProductName = item.name;
+                }
+                else if (isHandle && color !== lastGroup) {
+                    const nClean = prodName.toLowerCase().trim().replace(/[,\s./_]+/g, '-');
+                    const cClean = color.toLowerCase().trim().replace(/[,\s./_]+/g, '-');
+                    const handlePaths = [`furniture-img/${nClean}-${cClean}.jpg`, `furniture-img/${nClean}-${cClean}.png` ];
+                    const handleImgId = `handle-finish-${Math.random().toString(36).substr(2, 5)}`;
+
                     html += `
                     <tr style="background: #ffffff; border-bottom: 1px solid #edf2f7;">
                         <td colspan="6" style="padding:20px 10px;">
                             <div style="display:flex; align-items:center; justify-content:center; gap:25px;">
-                                
-                                <div style="background:#fff; padding:6px; border-radius:10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid #eee; display: flex; align-items: center; justify-content: center;">
-                                    <img src="${colorImg}" 
-                                         onclick="openZoom(event, '${color}', this.src)" 
-                                         onerror="this.src='https://placehold.co/80x60/f8fafc/b38728?text=No+Img'; this.onerror=null;"
-                                         style="width:80px; height:60px; object-fit:contain; cursor:zoom-in; display:block; background: white;">
+                                <div style="background:#fff; padding:6px; border-radius:10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid #eee; width:80px; height:60px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                                    <img id="${handleImgId}" src="https://placehold.co/80x60/f8fafc/b38728?text=..." style="max-width:100%; max-height:100%; object-fit:contain;">
                                 </div>
-                                
                                 <div style="text-align: left;">
                                     <span style="font-size:10px; color:#b38728; display:block; text-transform:uppercase; letter-spacing:2px; font-weight:900;">FINISH</span>
                                     <span style="font-weight:900; color:#1e293b; font-size:18px; text-transform:uppercase;">${color}</span>
@@ -741,61 +884,24 @@ function openModal(name, cat, param, isAutoHinge) {
                             </div>
                         </td>
                     </tr>`;
+                    setTimeout(() => { tryLoadImage(handleImgId, handlePaths, `${prodName} (${color})`); }, 50);
                     lastGroup = color;
-             } else if (!isHandle && !isClean) {
-                    let headerText = "";
-
-                    // 1. SPECIFIC RULE: Bottle Pullouts (Group by Middle Size)
-                    if (name.toLowerCase().includes("bottle pullout")) {
-                        // Splits "4X20X17" into ["4", "20", "17"] and takes index 1 (the middle one)
-                        let parts = cleanSpec.split(/[xX]/);
-                        if (parts.length >= 2) {
-                            let middleSize = parts[1].trim();
-                            if (middleSize !== lastGroup) {
-                                headerText = `${middleSize} DEPTH SERIES`;
-                                lastGroup = middleSize;
-                            }
-                        }
-                    } 
-                    // 2. SPECIFIC RULE: Kitchen Trolleys (Group by First Size)
-                    else if (catLower.includes("kitchen trolley")) {
-                        let sizePrefix = cleanSpec.split(/[xX]/)[0].trim();
-                        if (sizePrefix !== lastGroup) {
-                            headerText = `${sizePrefix} MM SERIES`;
-                            lastGroup = sizePrefix;
-                        }
-                    } 
-                    // 3. DEFAULT RULE: All other categories
-                    else {
-                        let mainSize = cleanSpec.includes('x') ? cleanSpec.split('x')[1].trim() : cleanSpec;
-                        if (mainSize !== lastGroup) {
-                            headerText = `${mainSize} SERIES`;
-                            lastGroup = mainSize;
-                        }
-                    }
-
-                    // Inject the row if we found a new header
-                    if (headerText !== "") {
-                        html += `
-                        <tr style="background: #f1f5f9; border-left: 5px solid #b38728;">
-                            <td colspan="6" style="padding:10px; text-align:center;">
-                                <span style="font-size:12px; font-weight:900; color:#475569; letter-spacing:1px; text-transform:uppercase;">
-                                    ${headerText}
-                                </span>
-                            </td>
-                        </tr>`;
-                    }
                 }
 
                 const displayCol = isAutoHinge ? item.brand : size;
+
                 html += `
-                <tr style="border-bottom: 1px solid #f1f5f9;">
-                    <td style="padding:14px 5px; text-align:center;"><input type="checkbox" class="row-select" data-brand="${item.brand || ''}" data-finish="${color}" onchange="calculateOrderTotal()" style="transform:scale(1.3); cursor:pointer;"></td>
+                <tr ${rowVisibilityClass} style="border-bottom: 1px solid #f1f5f9;">
+                    <td style="padding:14px 5px; text-align:center;">
+                        <input type="checkbox" class="row-select" data-brand="${item.brand || ''}" data-finish="${color}" onchange="calculateOrderTotal()" style="transform:scale(1.3); cursor:pointer;">
+                    </td>
                     <td style="padding:14px 5px; font-weight:800; color:#334155; font-size:15px;" class="row-spec-name">${displayCol}</td>
                     <td style="padding:14px 5px; color:#64748b; font-weight:600;" class="row-mrp" data-mrp="${price}">₹${price}</td>
-                    <td style="padding:14px 5px;"><input type="number" class="row-disc" value="0" oninput="calculateOrderTotal()" style="width:50px; text-align:center; border:1px solid #cbd5e1; border-radius:6px; padding:4px;"> %</td>
+                    <td style="padding:14px 5px;">
+                        <input type="number" class="row-disc" value="0" oninput="calculateOrderTotal()" style="width:50px; text-align:center; border:1px solid #cbd5e1; border-radius:6px; padding:4px;"> %
+                    </td>
                     <td style="padding:14px 5px; display:flex; align-items:center; gap:5px; justify-content:center;">
-                        <input type="number" class="row-qty" value="1" oninput="calculateOrderTotal()" style="width: 50px !important; text-align: center; border: 1px solid #ccc; border-radius: 4px; padding: 4px; font-weight: bold; outline: none;">
+                        <input type="number" class="row-qty" value="1" oninput="calculateOrderTotal()" style="width: 45px; text-align: center; border: 1px solid #ccc; border-radius: 4px; padding: 4px;">
                         <span class="row-unit" style="font-size:11px; color:#94a3b8; font-weight:700;">pcs</span>
                     </td>
                     <td style="padding:14px 5px; text-align:right; font-weight:900; color:#b38728; font-size:16px;" class="row-final">₹0</td>
@@ -807,7 +913,63 @@ function openModal(name, cat, param, isAutoHinge) {
         document.getElementById('order-modal-overlay').style.display = "flex"; 
         calculateOrderTotal();
         syncModalToCart();
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error("Modal Error:", e); }
+}
+
+// --- UPDATED SUPPORTING FUNCTIONS ---
+let activeWidth = "";
+let activeDepth = "";
+
+function togglePill(btn, type, value) {
+    const container = btn.parentElement;
+    container.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+
+    if (type === 'width') activeWidth = value;
+    if (type === 'depth') activeDepth = value;
+
+    runCombinedModalFilter();
+}
+
+function runCombinedModalFilter() {
+    const searchEl = document.getElementById('modalSearch');
+    const searchQuery = searchEl ? searchEl.value.toLowerCase() : "";
+    
+    const rows = document.querySelectorAll('.trolley-row');
+    const headers = document.querySelectorAll('.trolley-header-row');
+
+    rows.forEach(row => {
+        const basketName = row.getAttribute('data-name');
+        const specText = row.querySelector('.row-spec-name').innerText.toLowerCase();
+        const parts = specText.split('x');
+
+        const matchesSearch = basketName.includes(searchQuery) || specText.includes(searchQuery);
+        const matchesWidth = activeWidth === "" || (parts[0] && parts[0].trim() === activeWidth);
+        const matchesDepth = activeDepth === "" || (parts[1] && parts[1].trim() === activeDepth);
+
+        row.style.display = (matchesSearch && matchesWidth && matchesDepth) ? "" : "none";
+    });
+
+    headers.forEach(header => {
+        const name = header.getAttribute('data-name');
+        const hasVisibleRows = Array.from(rows).some(r => r.getAttribute('data-name') === name && r.style.display === "");
+        header.style.display = hasVisibleRows ? "" : "none";
+    });
+}
+
+function resetModalFilters() {
+    activeWidth = "";
+    activeDepth = "";
+    const searchEl = document.getElementById('modalSearch');
+    if (searchEl) searchEl.value = "";
+    
+    // Reset Pill UI
+    document.querySelectorAll('.filter-pill').forEach(p => {
+        p.classList.remove('active');
+        if (p.innerText === "ALL") p.classList.add('active');
+    });
+
+    runCombinedModalFilter();
 }
 // --- 2. THE CALCULATION ENGINE ---
 function calculateOrderTotal() {
