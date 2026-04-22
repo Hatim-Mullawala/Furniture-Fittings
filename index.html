@@ -6,6 +6,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <title>Furniture Fittings - Hatimi Hardware</title>
     <style>
+    /* Forces the TARS widget to stay away from the very top of the mobile screen */
+    #tars-widget-container.mobile {
+        height: 80vh !important;    /* Uses only 80% of the screen height */
+        top: auto !important;       /* Disables top alignment */
+        bottom: 20px !important;    /* Keeps it slightly above the bottom */
+        margin-top: 50px !important; /* Adds extra breathing room at the top */
+        border-radius: 15px !important; /* Makes it look like a floating popup */
+        overflow: hidden !important;
+    }
+
+    /* Ensures the iframe inside doesn't bleed out */
+    #tars-widget-container iframe {
+        border-radius: 15px !important;
+    }
+</style>
+    <style>
         :root { --primary-gold: #b38728; }
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f6; color: #333; }
 
