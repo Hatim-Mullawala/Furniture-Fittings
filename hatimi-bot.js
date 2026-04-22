@@ -1,4 +1,4 @@
-/* Hatimi Hardware Bot Loader - Mobile Popup Fix */
+/* Hatimi Hardware Bot Loader - No-Redirect Version */
 (function() {
     const d = document;
     const s = d.createElement('script');
@@ -9,9 +9,9 @@
 
     window.tarsSettings = {
         "convid": "uLv41w",
-        "mode": "widget",        // Keeps it as a popup
-        "mobile_view": "widget", // Specifically for phones
-        "open_in_tab": false,    // Prevents it from taking over the screen
+        "mode": "widget",        // Standard widget mode
+        "mobile_view": "widget", // FORCES popup on mobile
+        "redirect": false,       // STOPS the new screen from opening
         "onInit": function() {
             console.log("Hatimi Hardware Assistant Initialized");
         }
