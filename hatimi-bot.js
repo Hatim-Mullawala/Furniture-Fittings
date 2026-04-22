@@ -1,4 +1,4 @@
-/* Hatimi Hardware Bot Loader - Top Cut-Off Fix */
+/* Hatimi Hardware Bot Loader - Mobile Top-Cut Fix */
 (function() {
     const d = document;
     const s = d.createElement('script');
@@ -10,20 +10,31 @@
     window.tarsSettings = {
         "convid": "uLv41w",
         "mode": "widget",
-        "mobile_view": "widget", 
+        "mobile_view": "widget",
         "redirect": false,
         "onInit": function() {
-            // This part forces the window down on mobile
             const style = d.createElement('style');
             style.innerHTML = `
+                /* The magic fix for mobile top cut-off */
                 #tars-widget-container.mobile {
-                    top: 60px !important;    /* Force it down from the top */
-                    height: calc(100% - 80px) !important; /* Shrink height to fit */
-                    bottom: 20px !important;
+                    height: 90dvh !important;   /* Uses 'Dynamic Viewport Height' */
+                    top: 5dvh !important;      /* Centers it vertically */
+                    bottom: 5dvh !important;
+                    margin: 0 auto !important;
+                    position: fixed !important;
+                    border-radius: 15px !important;
+                    overflow: hidden !important;
+                    box-shadow: 0px 10px 30px rgba(0,0,0,0.3) !important;
+                }
+                
+                /* Ensure the inner content doesn't bleed out */
+                #tars-widget-container.mobile iframe {
+                    height: 100% !important;
+                    border-radius: 15px !important;
                 }
             `;
             d.head.appendChild(style);
-            console.log("Hatimi Hardware Assistant: Top-fix Applied");
+            console.log("Hatimi Hardware Assistant: Dynamic Viewport Applied");
         }
     };
 })();
