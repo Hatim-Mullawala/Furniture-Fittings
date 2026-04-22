@@ -1,19 +1,17 @@
-/* Hatimi Hardware Bot Loader - Corrected */
+/* Hatimi Hardware Bot Loader - Mobile Popup Fix */
 (function() {
-    // 1. Initialize the Tars Widget Script
     const d = document;
     const s = d.createElement('script');
     s.src = 'https://tars-file-upload.s3.amazonaws.com/bulb/js/widget.js';
     s.type = 'text/javascript';
     s.async = true;
-    
-    // Add the script to the head of your page
     d.getElementsByTagName('head')[0].appendChild(s);
 
-    // 2. Configure the Bot Settings
     window.tarsSettings = {
-        "convid": "uLv41w", 
-        "mode": "widget",  // <--- ADD THIS LINE to prevent full-screen on mobile
+        "convid": "uLv41w",
+        "mode": "widget",        // Keeps it as a popup
+        "mobile_view": "widget", // Specifically for phones
+        "open_in_tab": false,    // Prevents it from taking over the screen
         "onInit": function() {
             console.log("Hatimi Hardware Assistant Initialized");
         }
