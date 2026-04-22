@@ -12,7 +12,8 @@
 
     // 2. Configure the Bot Settings
     window.tarsSettings = {
-        "convid": "uLv41w", // IMPORTANT: Put your actual ID inside the quotes
+        "convid": "uLv41w", 
+        "mode": "widget",  // <--- ADD THIS LINE to prevent full-screen on mobile
         "onInit": function() {
             console.log("Hatimi Hardware Assistant Initialized");
         }
