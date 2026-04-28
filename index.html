@@ -660,7 +660,7 @@ const displayTitle = isTrolley ? `${seriesName} SERIES` : (isAutoHinge ? p.specs
 
 // This ensures the Brand is available for that top "Category" slot
 const brandLabel = p.brand;
-            const displayBrand = isTrolley ? p.brand : (isAutoHinge ? p.name : p.brand);
+            const displayBrand = isTrolley ? catName : (isAutoHinge ? p.name : p.brand);
 
             const nClean = String(p.name).toLowerCase().trim().replace(/[,\s./_]+/g, '-');
             const sClean = String(p.specs).toLowerCase().trim().replace(/[,\s./_]+/g, '-');
