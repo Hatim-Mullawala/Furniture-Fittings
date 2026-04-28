@@ -655,8 +655,12 @@ async function renderFrontPage(products) {
                 html += `<div class="product-grid">`; 
             }
 
-            const displayTitle = isTrolley ? `${p.brand} - ${seriesName} SERIES` : (isAutoHinge ? p.specs : p.name);
-            const displayBrand = isTrolley ? catName : (isAutoHinge ? p.name : p.brand);
+            // This keeps the Main Title clean (Series Name only for trolleys)
+const displayTitle = isTrolley ? `${seriesName} SERIES` : (isAutoHinge ? p.specs : p.name);
+
+// This ensures the Brand is available for that top "Category" slot
+const brandLabel = p.brand;
+            const displayBrand = isTrolley ? p.brand : (isAutoHinge ? p.name : p.brand);
 
             const nClean = String(p.name).toLowerCase().trim().replace(/[,\s./_]+/g, '-');
             const sClean = String(p.specs).toLowerCase().trim().replace(/[,\s./_]+/g, '-');
