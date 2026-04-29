@@ -514,6 +514,19 @@
     position: absolute;
     top: -10px; bottom: -10px; left: -10px; right: -10px;
 }
+.review-scroll-area {
+    display: block !important; /* Force vertical stacking */
+    padding: 10px 0;
+}
+
+.review-item {
+    display: flex !important;
+    flex-direction: row; /* Keep content left, controls right */
+    width: 100%;
+    box-sizing: border-box;
+    border-bottom: 1px solid #f1f5f9;
+    padding: 16px 20px;
+}
     </style>
 </head>
     <body>
@@ -1392,42 +1405,55 @@ function showCartReview() {
     let grandTotal = 0;
     let grandTotalMRP = 0; // Added to track total MRP
 
-    for (const key in globalCart) {
-        const item = globalCart[key];
-        
-        // --- MATH CALCULATIONS ---
-        const originalMRP = (item.mrpPerUnit || 0) * item.qty; 
-        const rowSavings = originalMRP - item.total;
-        
-        count++;
-        grandTotal += item.total;
-        grandTotalMRP += originalMRP;
+   for (const key in globalCart) {
+    const item = globalCart[key];
+    const originalMRP = (item.mrpPerUnit || 0) * item.qty;
+    const rowSavings = originalMRP - item.total;
+    
+    count++;
+    grandTotal += item.total;
+    grandTotalMRP += originalMRP;
 
-        itemsHtml += `
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px; border-bottom: 1px solid #f1f5f9;">
-                <div style="flex: 1;">
-                    <div style="font-weight: 700; color: #1e293b; font-size: 14px;">${item.name}</div>
-                    <div style="font-size: 11px; color: #64748b;">${item.brand} | ${item.size}</div>
-                    <div style="margin-top:4px;">
-                        <span style="text-decoration: line-through; color: #94a3b8; font-size: 11px;">₹${originalMRP.toLocaleString('en-IN')}</span>
-                        <span style="color: #15803d; font-size: 11px; font-weight: 800; margin-left: 5px;">(Save ₹${rowSavings.toLocaleString('en-IN')})</span>
-                    </div>
-                </div>
-    
-    <div style="display: flex; align-items: center; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
-        <button ontouchstart="updateReviewQty('${key}', -1, event)" onclick="updateReviewQty('${key}', -1, event)" style="padding: 10px 15px; border: none; background: none; cursor: pointer; font-size: 18px; font-weight: bold;">-</button>
-        <span style="width: 25px; text-align: center; font-size: 14px; font-weight: 700;">${item.qty}</span>
-        <button ontouchstart="updateReviewQty('${key}', 1, event)" onclick="updateReviewQty('${key}', 1, event)" style="padding: 10px 15px; border: none; background: none; cursor: pointer; font-size: 18px; font-weight: bold;">+</button>
-    </div>
-    
-    <div style="text-align: right; min-width: 85px;">
-        <div style="font-weight: 800; color: #b38728; font-size: 15px;">₹${item.total.toLocaleString('en-IN')}</div>
-        <div ontouchstart="removeReviewItem('${key}', event)" onclick="removeReviewItem('${key}', event)" style="font-size: 11px; color: #ef4444; cursor: pointer; font-weight: 800; text-transform: uppercase; margin-top: 5px; padding: 5px;">Remove</div>
-    </div>
-`;
+    // ONLY show savings if they actually exist
+    const savingsHTML = rowSavings > 0 
+        ? `<div style="margin-top:2px;">
+             <span style="text-decoration: line-through; color: #94a3b8; font-size: 11px;">₹${originalMRP}</span>
+             <span style="color: #15803d; font-size: 11px; font-weight: 800; margin-left: 5px;">(Save ₹${rowSavings})</span>
+           </div>` 
+        : "";
+
+    // Replace the itemsHtml += `...` block with this:
+itemsHtml += `
+    <div class="review-item" style="display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid #f1f5f9;">
+        <div style="flex: 1; padding-right: 15px; min-width: 0;">
+            <div style="font-weight: 800; color: #1e293b; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">${item.brand} • ${item.size}</div>
+            ${savingsHTML}
+        </div>
+        
+        <div style="display: flex; align-items: center; gap: 15px; flex-shrink: 0;">
+            <div style="display: flex; align-items: center; border: 1.5px solid #e2e8f0; border-radius: 10px; background: #f8fafc; overflow: hidden;">
+                <button onclick="updateReviewQty('${key}', -1, event)" style="padding: 8px 12px; border: none; background: none; cursor: pointer; font-weight: bold; color: #1e293b;">-</button>
+                <span style="min-width: 20px; text-align: center; font-size: 13px; font-weight: 800; color: #1e293b;">${item.qty}</span>
+                <button onclick="updateReviewQty('${key}', 1, event)" style="padding: 8px 12px; border: none; background: none; cursor: pointer; font-weight: bold; color: #1e293b;">+</button>
+            </div>
+            
+            <div style="text-align: right; min-width: 90px;">
+                <div style="font-weight: 900; color: #1e293b; font-size: 16px;">₹${item.total.toLocaleString('en-IN')}</div>
+                <div onclick="removeReviewItem('${key}', event)" style="font-size: 10px; color: #ef4444; cursor: pointer; font-weight: 800; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.5px;">REMOVE</div>
+            </div>
+        </div>
+    </div>`;
+
     }
 
     const totalSavings = grandTotalMRP - grandTotal;
+const savingsBox = totalSavings > 0 ? `
+    <div style="margin: 0 24px 20px; padding: 12px; background: #f0fdf4; border-radius: 12px; border: 1.5px dashed #15803d; display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 12px; color: #15803d; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Your Total Savings</span>
+        <span style="font-size: 16px; color: #15803d; font-weight: 900;">₹${totalSavings.toLocaleString('en-IN')}</span>
+    </div>
+` : "";
 
     modal.innerHTML = `
         <div class="floating-cart-card">
