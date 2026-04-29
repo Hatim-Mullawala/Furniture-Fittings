@@ -52,10 +52,15 @@
     padding: 20px 0; 
     width: 100%;
     clear: both; /* Prevents floating elements from interfering */
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* Ensures all cards in a row have the same height */
+    justify-content: space-between;
 }
 
 @media (min-width: 768px) { 
-    .product-grid { grid-template-columns: repeat(3, 1fr); } 
+    .product-grid { grid-template-columns: repeat(3, 1fr); gap: 30px;}
+     
 }
 
 @media (min-width: 1024px) { 
@@ -438,9 +443,65 @@
     max-height: 80vh !important;
     bottom: 10px !important;
 }
+#cartReviewModal {
+    display: none; 
+    position: fixed;
+    z-index: 10001;
+    left: 0; top: 0; width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(8px);
+    /* This centers the card perfectly */
+    align-items: center; 
+    justify-content: center;
+}
+
+.floating-cart-card {
+    background: white;
+    width: 90%;
+    max-width: 450px;
+    border-radius: 24px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+    overflow: hidden;
+    /* Added margin-bottom to keep it away from the bottom of the screen */
+    margin-bottom: 20px; 
+}
+
+@keyframes zoomIn {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.review-scroll-area::-webkit-scrollbar { width: 6px; }
+.review-scroll-area::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+/* RESPONSIVE FIXES FOR MOBILE & TABLET */
+@media screen and (max-width: 768px) {
+    .floating-cart-card {
+        width: 96% !important;
+        max-height: 90vh !important; /* Give more height on small screens */
+        border-radius: 20px !important;
+    }
+
+    /* Make buttons easier to tap on mobile */
+    .floating-cart-card button {
+        min-height: 48px; 
+    }
+
+    /* Adjust font size so titles don't wrap too much */
+    .floating-cart-card h2 {
+        font-size: 18px !important;
+    }
+
+    /* Ensure the Gold Cart Bar doesn't cover the very bottom of the page content */
+    body {
+        padding-bottom: 100px; 
+    }
+}
     </style>
 </head>
-<body>
+    <body>
 
 <button id="backToTop" onclick="scrollToTop()">↑</button>
 <a href="tel:+919406648766" class="mobile-call-btn">
@@ -922,7 +983,11 @@ if (filterContainer) {
                 html += `
                 <tr ${rowVisibilityClass} style="border-bottom: 1px solid #f1f5f9;">
                     <td style="padding:14px 5px; text-align:center;">
-                        <input type="checkbox" class="row-select" data-brand="${item.brand || ''}" data-finish="${color}" onchange="calculateOrderTotal()" style="transform:scale(1.3); cursor:pointer;">
+                        <input type="checkbox" class="row-select" 
+       data-brand="${item.brand || ''}" 
+       data-finish="${color}" 
+       onchange="calculateOrderTotal(); syncModalToCart();" 
+       style="transform:scale(1.3); cursor:pointer;">
                     </td>
                     <td style="padding:14px 5px; font-weight:800; color:#334155; font-size:15px;" class="row-spec-name">${displayCol}</td>
                     <td style="padding:14px 5px; color:#64748b; font-weight:600;" class="row-mrp" data-mrp="${price}">₹${price}</td>
@@ -1161,10 +1226,9 @@ function filterCategoryCards(filterType, btn) {
 // 1. The Global Memory Bank
 let globalCart = {};
 
-// --- 3. THE CART SCANNER (BRAND & FINISH FIXED!) ---
 function syncModalToCart() {
-    const titleEl = document.getElementById('modal-title') || document.getElementById('modalTitle');
-    const prodName = titleEl ? titleEl.innerText : "Product";
+    const titleEl = document.getElementById('modal-title');
+    const seriesTitle = titleEl ? titleEl.innerText : "Standard";
 
     const rows = document.querySelectorAll('#modal-table-body tr');
     
@@ -1173,38 +1237,30 @@ function syncModalToCart() {
         const qtyInput = row.querySelector('.row-qty');
         
         if (checkbox && qtyInput) {
-            const sizeEl = row.querySelector('.row-spec-name');
-            const size = sizeEl ? sizeEl.innerText : "Standard";
+            const size = row.querySelector('.row-spec-name').innerText.trim();
+            const basketName = row.getAttribute('data-name') || "Item";
+            const brand = checkbox.getAttribute('data-brand') || "";
+            const finish = checkbox.getAttribute('data-finish') || "";
             
-            // NEW: Grab the exact Brand and Finish directly from the checkbox!
-            const prodBrand = checkbox.getAttribute('data-brand') || "";
-            let prodFinish = checkbox.getAttribute('data-finish') || "";
-            
-            // Clean up the finish so it doesn't say "Standard" on simple items
-            if (prodFinish === "Standard") prodFinish = "";
-
-            const mrpEl = row.querySelector('.row-mrp');
-            const mrp = mrpEl ? (parseFloat(mrpEl.getAttribute('data-mrp')) || 0) : 0;
-            
-            const discInput = row.querySelector('.row-disc');
-            const disc = discInput ? (parseFloat(discInput.value) || 0) : 0;
-            
-            const finalUnitPrice = mrp - (mrp * (disc / 100));
+            const mrp = parseFloat(row.querySelector('.row-mrp').getAttribute('data-mrp')) || 0;
+            const disc = parseFloat(row.querySelector('.row-disc').value) || 0;
             const qty = parseInt(qtyInput.value) || 0;
             
-            // Make a unique key for the cart
-            const itemKey = `${prodBrand}|${prodName}|${size}|${prodFinish}`; 
+            const finalPrice = Math.round(mrp * (1 - (disc / 100)));
+            
+            // Generate a truly unique key
+            const itemKey = `${seriesTitle}|${basketName}|${size}|${finish}`.toLowerCase();
 
             if (checkbox.checked && qty > 0) {
                 globalCart[itemKey] = {
-                    brand: prodBrand, 
-                    name: prodName, 
-                    finish: prodFinish, // Saves the true finish!
+                    name: `${seriesTitle} ${basketName}`,
+                    brand: brand,
                     size: size,
-                    price: Math.round(finalUnitPrice),
-                    mrpTotal: Math.round(mrp * qty),
-                    qty: qty, 
-                    total: Math.round(finalUnitPrice * qty)
+                    finish: finish,
+                    price: finalPrice,
+                    mrpPerUnit: mrp,
+                    qty: qty,
+                    total: finalPrice * qty
                 };
             } else {
                 delete globalCart[itemKey];
@@ -1214,33 +1270,31 @@ function syncModalToCart() {
     
     refreshCartUI();
 }
-// 3. Updates the Premium Footer
 function refreshCartUI() {
     const cartBar = document.getElementById('globalCartBar');
-    let totalQty = 0, grandTotal = 0;
+    let count = 0;
+    let totalMoney = 0;
 
-    for (const key in globalCart) {
-        totalQty += globalCart[key].qty;
-        grandTotal += globalCart[key].total;
+    for (let key in globalCart) {
+        count++;
+        totalMoney += globalCart[key].total;
     }
 
-    if (totalQty > 0) {
-        cartBar.style.display = 'flex'; 
-        document.getElementById('cartItemCount').innerText = `${totalQty} ITEMS SELECTED`;
-        // Find this line in your refreshCartUI function:
-document.getElementById('cartTotalValue').innerHTML = `<span>₹</span>${Math.round(grandTotal).toLocaleString('en-IN')}`;
+    if (count > 0) {
+        cartBar.style.display = 'flex'; // This makes the bar appear
+        document.getElementById('cartItemCount').innerText = `${count} ITEMS SELECTED`;
+        document.getElementById('cartTotalValue').innerHTML = `<span>₹</span>${totalMoney.toLocaleString('en-IN')}`;
     } else {
-        cartBar.style.display = 'none'; 
+        cartBar.style.display = 'none';
     }
 }
-
 // --- 4. THE PROFESSIONAL WHATSAPP GENERATOR (WITH SAVINGS!) ---
 function sendGlobalWhatsAppOrder() {
     let msg = "📦 *NEW ORDER - HATIMI HARDWARE* 📦\n";
     msg += "----------------------------------------\n\n";
     
     let finalTotal = 0;
-    let originalTotalMRP = 0; // <-- NEW: Tracks the total before discounts
+    let totalMRP = 0; 
 
     for (const key in globalCart) {
         const item = globalCart[key];
@@ -1254,40 +1308,38 @@ function sendGlobalWhatsAppOrder() {
         
         msg += `🔹 ${titleLine}\n`;
         
-        if (item.finish && item.finish !== "undefined") {
+        if (item.finish && item.finish !== "undefined" && item.finish !== "") {
             msg += `     Finish: ${item.finish}\n`;
         }
         
         msg += `     Size: ${item.size}\n`;
         msg += `     Qty: ${item.qty} pcs\n`;
         
-        const formattedPrice = item.price.toLocaleString('en-IN');
-        const formattedSubtotal = item.total.toLocaleString('en-IN');
+        // --- ADDING MRP STRIKETHROUGH IN MESSAGE ---
+        const unitMRP = item.mrpPerUnit || item.price;
+        const rowMRP = unitMRP * item.qty;
         
-        msg += `     Price: ₹${formattedPrice}/pc\n`;
-        msg += `     Subtotal: *₹${formattedSubtotal}*\n\n`;
+        msg += `     Price: ₹${item.price.toLocaleString('en-IN')} (~₹${unitMRP.toLocaleString('en-IN')}~)\n`;
+        msg += `     Subtotal: *₹${item.total.toLocaleString('en-IN')}*\n\n`;
         
         finalTotal += item.total;
-        
-        // Adds up the original MRP safely
-        originalTotalMRP += (item.mrpTotal || item.total); 
+        totalMRP += rowMRP; 
     }
 
-    const formattedGrandTotal = finalTotal.toLocaleString('en-IN');
-    
-    // <-- NEW: Calculate how much they saved! -->
-    const totalSaved = originalTotalMRP - finalTotal;
+    const totalSaved = totalMRP - finalTotal;
 
     msg += `----------------------------------------\n`;
     
-    // Only show "You Saved" if they actually got a discount
+    // Summary Section
+    msg += `💰 Total MRP: ₹${totalMRP.toLocaleString('en-IN')}\n`;
+    
     if (totalSaved > 0) {
-        const formattedSaved = totalSaved.toLocaleString('en-IN');
-        msg += `🎉 *YOU SAVED: ₹${formattedSaved}* 🎉\n`;
+        msg += `🎉 *YOU SAVED: ₹${totalSaved.toLocaleString('en-IN')}*\n`;
     }
 
-    msg += `🧾 *GRAND TOTAL: ₹${formattedGrandTotal}*\n`;
+    msg += `🧾 *NET PAYABLE: ₹${finalTotal.toLocaleString('en-IN')}*\n`;
     msg += `----------------------------------------\n`;
+    msg += `_Order generated via Hatimi Digital Catalog_`;
 
     const phone = "918109539453"; 
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
@@ -1318,6 +1370,138 @@ function clearGlobalCart() {
     
     refreshCartUI();
 }
+function showCartReview() {
+    const modal = document.getElementById('cartReviewModal');
+    let itemsHtml = "";
+    let count = 0;
+    let grandTotal = 0;
+    let grandTotalMRP = 0; // Added to track total MRP
+
+    for (const key in globalCart) {
+        const item = globalCart[key];
+        
+        // --- MATH CALCULATIONS ---
+        const originalMRP = (item.mrpPerUnit || 0) * item.qty; 
+        const rowSavings = originalMRP - item.total;
+        
+        count++;
+        grandTotal += item.total;
+        grandTotalMRP += originalMRP;
+
+        itemsHtml += `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px; border-bottom: 1px solid #f1f5f9;">
+                <div style="flex: 1;">
+                    <div style="font-weight: 700; color: #1e293b; font-size: 14px;">${item.name}</div>
+                    <div style="font-size: 11px; color: #64748b;">${item.brand} | ${item.size}</div>
+                    <div style="margin-top:4px;">
+                        <span style="text-decoration: line-through; color: #94a3b8; font-size: 11px;">₹${originalMRP.toLocaleString('en-IN')}</span>
+                        <span style="color: #15803d; font-size: 11px; font-weight: 800; margin-left: 5px;">(Save ₹${rowSavings.toLocaleString('en-IN')})</span>
+                    </div>
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="display: flex; align-items: center; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+                        <button onclick="updateReviewQty('${key}', -1)" style="padding: 6px 10px; border: none; background: none; cursor: pointer; font-weight:bold;">-</button>
+                        <span style="width: 20px; text-align: center; font-size: 12px; font-weight: 700;">${item.qty}</span>
+                        <button onclick="updateReviewQty('${key}', 1)" style="padding: 6px 10px; border: none; background: none; cursor: pointer; font-weight:bold;">+</button>
+                    </div>
+                    <div style="text-align: right; min-width: 80px;">
+                        <div style="font-weight: 900; color: #1e293b; font-size: 15px;">₹${item.total.toLocaleString('en-IN')}</div>
+                        <div onclick="removeReviewItem('${key}')" style="font-size: 10px; color: #ef4444; cursor: pointer; font-weight: 800; text-transform: uppercase; margin-top: 2px;">Remove</div>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    const totalSavings = grandTotalMRP - grandTotal;
+
+    modal.innerHTML = `
+        <div class="floating-cart-card">
+            <div style="padding: 24px 24px 16px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 style="margin: 0; font-size: 20px; font-weight: 900; color: #1e293b;">Review Order</h2>
+                    <p style="margin: 4px 0 0; font-size: 12px; color: #64748b; font-weight: 600;">You have ${count} unique items selected</p>
+                </div>
+                <button onclick="closeCartReview()" style="background: #f1f5f9; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 20px; color: #64748b;">&times;</button>
+            </div>
+
+            <div class="review-scroll-area" style="overflow-y: auto; flex: 1; padding: 8px 0;">
+                ${count > 0 ? itemsHtml : '<div style="padding: 60px 20px; text-align: center; color: #94a3b8; font-weight: 600;">Your cart is empty.</div>'}
+            </div>
+
+            ${count > 0 ? `
+            <div style="padding: 24px; background: #fff; border-top: 1px solid #f1f5f9; text-align: center;">
+                <div style="margin-bottom: 15px; padding: 10px; background: #f0fdf4; border-radius: 12px; border: 1px dashed #15803d;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 12px; color: #15803d; font-weight: 700; text-transform: uppercase;">Total Savings</span>
+                        <span style="font-size: 16px; color: #15803d; font-weight: 900;">₹${totalSavings.toLocaleString('en-IN')}</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <span style="font-size: 13px; color: #64748b; font-weight: 800; text-transform: uppercase;">Total Estimate</span>
+                    <span style="font-size: 26px; color: #1e293b; font-weight: 900;">₹${grandTotal.toLocaleString('en-IN')}</span>
+                </div>
+                
+                <button onclick="sendGlobalWhatsAppOrder()" style="width: 100%; background: #b38728; color: white; border: none; padding: 18px; border-radius: 16px; font-weight: 800; font-size: 16px; cursor: pointer; transition: 0.3s; box-shadow: 0 10px 20px -5px rgba(179, 135, 40, 0.4);">
+                    Send Order via WhatsApp
+                </button>
+                
+                <div onclick="clearGlobalCart(); closeCartReview();" style="margin-top: 18px; color: #94a3b8; font-size: 11px; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">
+                    🗑️ Clear Selection
+                </div>
+            </div>
+            ` : ''}
+        </div>
+    `;
+
+    modal.style.display = "flex";
+}
+function updateReviewQty(key, change) {
+    if (globalCart[key]) {
+        // 1. Update the quantity
+        globalCart[key].qty += change;
+
+        // 2. If it goes to 0, delete it
+        if (globalCart[key].qty <= 0) {
+            delete globalCart[key];
+        } else {
+            // 3. Recalculate total for this item
+            globalCart[key].total = globalCart[key].qty * globalCart[key].price;
+        }
+
+        // 4. Update the background UI (the Gold Bar and the list)
+        refreshCartUI();
+        showCartReview(); 
+    }
+}
+
+function removeReviewItem(key) {
+    // 1. Remove from memory
+    delete globalCart[key];
+
+    // 2. Uncheck the box in the background (if visible)
+    const checkboxes = document.querySelectorAll('.row-select');
+    checkboxes.forEach(cb => {
+        const row = cb.closest('tr');
+        if (row) {
+            const size = row.querySelector('.row-spec-name').innerText.trim();
+            // If the key contains this size, uncheck it
+            if (key.toLowerCase().includes(size.toLowerCase())) {
+                cb.checked = false;
+                // Update the row price in the modal background
+                row.querySelector('.row-final').innerText = '₹0';
+            }
+        }
+    });
+
+    // 3. Refresh everything
+    refreshCartUI();
+    showCartReview();
+}
+function closeCartReview() {
+    document.getElementById('cartReviewModal').style.display = "none";
+}
 loadFurnitureData();
 </script>
 
@@ -1337,10 +1521,12 @@ loadFurnitureData();
         <p id="loginError" style="color: #e74c3c; font-size: 13px; margin-top: 15px; display: none;">❌ Incorrect password, try again.</p>
     </div>
 </div>
-<div id="globalCartBar" class="global-cart-bar no-print">
-    <div class="cart-info">
+<div id="globalCartBar" class="global-cart-bar no-print" onclick="showCartReview()">
+    <div class="cart-info" style="cursor:pointer;">
         <span id="cartItemCount" class="cart-items-text">0 ITEMS SELECTED</span>
         <span id="cartTotalValue" class="cart-total-text"><span>₹</span>0</span>
+        <span style="font-size: 10px; color: var(--primary-gold); font-weight: bold; text-decoration: underline;">TAP TO VIEW LIST ↓</span>
+    </div>
     </div>
     
     <div style="display: flex; gap: 12px; align-items: center;">
@@ -1361,6 +1547,25 @@ loadFurnitureData();
     </div>
 </div>
 </div>
+<div id="cartReviewModal" class="modal" style="display:none; align-items:flex-end;">
+    <div class="modal-content" style="width:100%; max-width:600px; border-radius:20px 20px 0 0; margin:0; padding:25px; animation: slideUp 0.3s ease-out;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 style="margin:0; color:#b38728; font-size:20px;">🛒 Your Selection</h2>
+            <span style="font-size:30px; cursor:pointer;" onclick="closeCartReview()">&times;</span>
+        </div>
+        
+        <div id="reviewListContainer" style="max-height:60vh; overflow-y:auto; margin-bottom:20px;">
+            </div>
+
+        <button onclick="closeCartReview()" style="width:100%; background:#f4f4f4; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer;">Close & Continue Shopping</button>
+    </div>
+</div>
+
+<style>
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.review-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; }
+.review-item-details { display: flex; flex-direction: column; gap: 4px; }
+</style>
 <script src="hatimi-bot.js"></script>
 </body>
 </html>

@@ -438,10 +438,33 @@
     max-height: 80vh !important;
     bottom: 10px !important;
 }
+@media screen and (max-width: 768px) {
+    #langSwitcher {
+        top: auto !important;
+        bottom: 100px !important; /* Pushes it above the WhatsApp/Cart bar */
+        left: auto !important;
+        right: 20px !important;
+        width: 60px;
+        height: 60px;
+        border-radius: 50% !important;
+        justify-content: center;
+        padding: 0 !important;
+        font-size: 10px;
+    }
+    #langLabel {
+        display: none; /* Hide text on mobile to keep it a clean circle */
+    }
+    #langSwitcher::after {
+        content: 'HI/EN'; /* Simple indicator */
+        font-size: 10px;
+    }
+}
     </style>
 </head>
 <body>
-
+<button id="langSwitcher" onclick="changeLanguage()" style="position: fixed; top: 100px; left: 20px; z-index: 9999; background: #222; color: white; border: 2px solid #b38728; padding: 10px 18px; border-radius: 50px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 8px;">
+    🌐 <span id="langLabel">हिन्दी</span>
+</button>
 <button id="backToTop" onclick="scrollToTop()">↑</button>
 <a href="tel:+919406648766" class="mobile-call-btn">
     <svg width="24" height="24" viewBox="0 0 24 24"><path fill="white" d="M6.62,10.79C8.06,13.62 10.38,15.94 13.21,17.38L15.41,15.18C15.69,14.9 16.08,14.82 16.43,14.93C17.55,15.3 18.75,15.5 20,15.5A1,1 0 0,1 21,16.5V20A1,1 0 0,1 20,21A17,17 0 0,1 3,4A1,1 0 0,1 4,3H7.5A1,1 0 0,1 8.5,4C8.5,5.25 8.7,6.45 9.07,7.57C9.18,7.92 9.1,8.31 8.82,8.59L6.62,10.79Z"/></svg>
@@ -550,10 +573,47 @@
     <div class="last-sync" id="syncStatus">Fetching latest data...</div>
 </footer>
 
-<script src="hatimi-main.js"></script><script>
+<script>
 // !!! INSERT YOUR NEW FURNITURE GOOGLE SHEET CSV EXPORT URL HERE !!!
 const furnitureSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRqfLPTM9QCajpUToFw0B2UTKUIv-0d3P5ldQxLWKYfD98PPVf5ZEDXITZuTrdNPh8D8dDKcJxO1D4O/pub?gid=626650759&single=true&output=csv';
+// 1. MUST BE AT THE TOP
+// --- 1. LANGUAGE DATA (Must be at the top to avoid Errors) ---
+let currentLang = 'EN'; 
+const langData = {
+    'EN': {
+        'toggle': 'हिन्दी',
+        'viewBtn': 'VIEW SIZES & PRICES',
+        'searchPlaceholder': 'Search furniture fittings...',
+        'kitchen trolley': 'KITCHEN TROLLEY',
+        'auto hinge': 'AUTO HINGE',
+        'furniture handles': 'FURNITURE HANDLES',
+        'butt hinges': 'BUTT HINGES',
+        'sliding fittings': 'SLIDING FITTINGS',
+        'adhesive': 'ADHESIVE',
+        'door locks': 'DOOR LOCKS'
+    },
+    'HI': {
+        'toggle': 'ENGLISH',
+        'viewBtn': 'साइज और रेट देखें',
+        'searchPlaceholder': 'सामान यहाँ सर्च करें...',
+        'kitchen trolley': 'किचन ट्रॉली',
+        'auto hinge': 'ऑटो कब्ज़ा (हिंज)',
+        'furniture handles': 'फर्नीचर हैंडल / कुंडी',
+        'butt hinges': 'बट कब्ज़ा',
+        'sliding fittings': 'स्लाइडिंग फिटिंग',
+        'adhesive': 'फेविकोल और एडेसिव',
+        'door locks': 'दरवाजे के ताले'
+    }
+};
 
+function changeLanguage() {
+    currentLang = (currentLang === 'EN') ? 'HI' : 'EN';
+    const label = document.getElementById('langLabel');
+    const search = document.getElementById('searchInput');
+    if (label) label.innerText = langData[currentLang]['toggle'];
+    if (search) search.placeholder = langData[currentLang]['searchPlaceholder'];
+    renderFrontPage(allProducts); 
+}
 let allProducts = [];
 
 window.onscroll = function() {
@@ -614,13 +674,12 @@ async function renderFrontPage(products) {
     let currentCat = "";
     let html = "";
 
+    // 1. Sort products
     const sortedProducts = [...products].sort((a, b) => {
         const catA = String(a.cat || "").trim().toLowerCase();
         const catB = String(b.cat || "").trim().toLowerCase();
         if (catA !== catB) return catA.localeCompare(catB);
-        const seriesA = String(a.series || "").trim().toLowerCase();
-        const seriesB = String(b.series || "").trim().toLowerCase();
-        return seriesA.localeCompare(seriesB);
+        return String(a.series || "").localeCompare(String(b.series || ""));
     });
 
     for (const p of sortedProducts) {
@@ -628,88 +687,73 @@ async function renderFrontPage(products) {
         const catLower = catName.toLowerCase();
         const seriesName = String(p.series || "").trim().toUpperCase();
         
-        const isAutoHinge = catLower.includes("auto hinge");
         const isHandle = catLower.includes("handle");
         const isTrolley = catLower.includes("kitchen trolley");
+        const isAutoHinge = catLower.includes("auto hinge");
 
-        const key = isTrolley 
-            ? `${catName}|${seriesName}` 
-            : (isAutoHinge ? `${catName}|${p.name}|${p.specs}` : `${catName}|${p.name}|${p.brand}`);
-        
-        if (!seen.has(key)) {
+        if (!seen.has(isTrolley ? `${catName}|${seriesName}` : `${catName}|${p.name}`)) {
             if (catName !== currentCat) {
                 if (html !== "") html += `</div></div>`; 
                 currentCat = catName;
-                html += `<div class="category-group" style="margin-bottom: 50px; width: 100%; clear: both;">
-                            <h2 class="category-header">${currentCat}</h2>`;
+                
+                const translatedHeader = langData[currentLang][catLower] || currentCat;
+                
+                html += `
+                <div class="category-group" style="margin-bottom: 50px;">
+                    <h2 class="category-header">${translatedHeader}</h2>`;
                 
                 if (isHandle) {
                     html += `<div class="catalog-filters no-print">
                                 <button class="filter-btn active" onclick="filterCategoryCards('All', this)">All</button>
-                                <button class="filter-btn" onclick="filterCategoryCards('concealed', this)">Concealed</button>
-                                <button class="filter-btn" onclick="filterCategoryCards('profile', this)">Profile</button>
-                                <button class="filter-btn" onclick="filterCategoryCards('knob', this)">Knobs</button>
-                                <button class="filter-btn" onclick="filterCategoryCards('main door', this)">Main Door</button>
                             </div>`;
                 }
                 html += `<div class="product-grid">`; 
             }
 
-            // This keeps the Main Title clean (Series Name only for trolleys)
-const displayTitle = isTrolley ? `${seriesName} SERIES` : (isAutoHinge ? p.specs : p.name);
-
-// This ensures the Brand is available for that top "Category" slot
-const brandLabel = p.brand;
-            const displayBrand = isTrolley ? p.brand : (isAutoHinge ? p.name : p.brand);
-
-            const nClean = String(p.name).toLowerCase().trim().replace(/[,\s./_]+/g, '-');
-            const sClean = String(p.specs).toLowerCase().trim().replace(/[,\s./_]+/g, '-');
-            const bClean = String(p.brand).toLowerCase().trim().replace(/[,\s./_]+/g, '-');
-            const cClean = String(p.cat).toLowerCase().trim().replace(/[,\s./_]+/g, '-');
-            const sriesClean = seriesName.toLowerCase().trim().replace(/[,\s./_]+/g, '-');
-
-            const paths = isHandle 
-                ? [`furniture-img/${nClean}-combo.jpg`, `furniture-img/${nClean}.jpg`] 
-                : (isTrolley ? [`furniture-img/${sriesClean}-series.jpg`, `furniture-img/${sriesClean}.jpg`] 
-                : [`furniture-img/${sClean}.jpg`, `furniture-img/${bClean}-${nClean}.jpg`, `furniture-img/${cClean}-${nClean}.jpg`, `furniture-img/${nClean}.jpg`]);
-
+            // --- 2. DEFINE CLICK ACTION VARIABLES HERE (FIXES THE ERROR) ---
             const encN = encodeURIComponent(p.name).replace(/'/g, "%27");
             const encC = encodeURIComponent(catName).replace(/'/g, "%27");
             const encParam = isAutoHinge ? encodeURIComponent(p.specs).replace(/'/g, "%27") : encodeURIComponent(p.brand).replace(/'/g, "%27");
             const encS = encodeURIComponent(seriesName).replace(/'/g, "%27");
-            const imgId = `img-${Math.random().toString(36).substr(2, 5)}`;
 
             let clickAction = isTrolley 
                 ? `openModal('', '${encC}', '', false, '${encS}')`
                 : `openModal('${encN}', '${encC}', '${encParam}', ${isAutoHinge}, '')`;
 
-            const titleHTML = isAutoHinge
-                ? `<div style="font-size:12px; font-weight:600; color:#94a3b8; text-transform:uppercase;">${p.name}</div>
-                   <div style="font-size:17px; font-weight:900; color:#1e293b; margin-top:5px;">${p.specs}</div>`
-                : `<div style="font-size:11px; color:#b38728; font-weight:900; text-transform:uppercase; margin-bottom:5px;">${displayBrand}</div>
-                   <div style="font-size:15px; font-weight:800; color:#1e293b; line-height:1.2;">${displayTitle}</div>`;
+            const displayTitle = isTrolley ? `${seriesName} SERIES` : p.name;
+            const btnText = langData[currentLang]['viewBtn'] || "VIEW SIZES";
+            const imgId = `img-${Math.random().toString(36).substr(2, 5)}`;
 
+            // --- 3. BUILD THE CARD HTML ---
             html += `
             <div class="product-card" data-search-text="${p.rawSearch}" style="border-top: 3px solid #b38728;">
-                <div class="img-holder" onclick="openZoom(event, '${displayTitle.replace(/'/g, "\\'")}', this.querySelector('img').src)">
+                <div class="img-holder">
                     <img id="${imgId}" src="https://placehold.co/300x300/f8fafc/b38728?text=${encodeURIComponent(displayTitle)}">
                 </div>
                 <div style="padding: 5px 0 15px;">
                     <div class="product-name" style="height:75px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
-                        ${titleHTML}
+                        <div style="font-size:11px; color:#b38728; font-weight:900; text-transform:uppercase;">${p.brand}</div>
+                        <div style="font-size:15px; font-weight:800; color:#1e293b; line-height:1.2;">${displayTitle}</div>
                     </div>
                 </div>
                 <div class="no-print">
-                    <button class="btn-view" onclick="${clickAction}">View Sizes & Prices</button>
+                    <button class="btn-view" onclick="${clickAction}">
+                        ${btnText}
+                    </button>
                 </div>
             </div>`;
 
+            // --- 4. TRIGGER IMAGE LOADING ---
+            const nClean = String(p.name).toLowerCase().trim().replace(/[,\s./_]+/g, '-');
+            const sriesClean = seriesName.toLowerCase().trim().replace(/[,\s./_]+/g, '-');
+            const paths = isTrolley ? [`furniture-img/${sriesClean}-series.jpg`, `furniture-img/${sriesClean}.jpg`] : [`furniture-img/${nClean}.jpg`];
+
             setTimeout(() => { if(typeof tryLoadImage === 'function') tryLoadImage(imgId, paths, p.name); }, 20);
-            seen.add(key);
+
+            seen.add(isTrolley ? `${catName}|${seriesName}` : `${catName}|${p.name}`);
         }
     }
-    if (html !== "") html += "</div></div>"; 
-    container.innerHTML = html;
+    container.innerHTML = html + "</div></div>";
 }
 function tryLoadImage(idOrElement, urls, name) {
     const imgElement = typeof idOrElement === 'string' ? document.getElementById(idOrElement) : idOrElement;
@@ -1318,6 +1362,25 @@ function clearGlobalCart() {
     
     refreshCartUI();
 }
+function changeLanguage() {
+    currentLang = (currentLang === 'EN') ? 'HI' : 'EN';
+    
+    // Update labels
+    const label = document.getElementById('langLabel');
+    if (label) label.innerText = langData[currentLang]['toggle'];
+    
+    // Update search bar
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) searchInput.placeholder = langData[currentLang]['searchPlaceholder'];
+
+    // Re-render
+    renderFrontPage(allProducts);
+
+    // Mobile Feedback: Simple alert or toast
+    if (window.innerWidth < 768) {
+        console.log("Language Switched to " + currentLang);
+    }
+}
 loadFurnitureData();
 </script>
 
@@ -1361,5 +1424,6 @@ loadFurnitureData();
     </div>
 </div>
 </div>
+<script src="hatimi-bot.js"></script>
 </body>
 </html>
