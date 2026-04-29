@@ -499,6 +499,21 @@
         padding-bottom: 100px; 
     }
 }
+/* Make buttons easier to hit on mobile */
+.floating-cart-card button {
+    touch-action: manipulation; /* Disables double-tap to zoom, making clicks instant */
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Increase the "Remove" clickable area without changing its look */
+.remove-link-style {
+    position: relative;
+}
+.remove-link-style::before {
+    content: '';
+    position: absolute;
+    top: -10px; bottom: -10px; left: -10px; right: -10px;
+}
     </style>
 </head>
     <body>
@@ -1398,19 +1413,18 @@ function showCartReview() {
                         <span style="color: #15803d; font-size: 11px; font-weight: 800; margin-left: 5px;">(Save ₹${rowSavings.toLocaleString('en-IN')})</span>
                     </div>
                 </div>
-                
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="display: flex; align-items: center; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
-                        <button onclick="updateReviewQty('${key}', -1)" style="padding: 6px 10px; border: none; background: none; cursor: pointer; font-weight:bold;">-</button>
-                        <span style="width: 20px; text-align: center; font-size: 12px; font-weight: 700;">${item.qty}</span>
-                        <button onclick="updateReviewQty('${key}', 1)" style="padding: 6px 10px; border: none; background: none; cursor: pointer; font-weight:bold;">+</button>
-                    </div>
-                    <div style="text-align: right; min-width: 80px;">
-                        <div style="font-weight: 900; color: #1e293b; font-size: 15px;">₹${item.total.toLocaleString('en-IN')}</div>
-                        <div onclick="removeReviewItem('${key}')" style="font-size: 10px; color: #ef4444; cursor: pointer; font-weight: 800; text-transform: uppercase; margin-top: 2px;">Remove</div>
-                    </div>
-                </div>
-            </div>`;
+    
+    <div style="display: flex; align-items: center; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+        <button ontouchstart="updateReviewQty('${key}', -1, event)" onclick="updateReviewQty('${key}', -1, event)" style="padding: 10px 15px; border: none; background: none; cursor: pointer; font-size: 18px; font-weight: bold;">-</button>
+        <span style="width: 25px; text-align: center; font-size: 14px; font-weight: 700;">${item.qty}</span>
+        <button ontouchstart="updateReviewQty('${key}', 1, event)" onclick="updateReviewQty('${key}', 1, event)" style="padding: 10px 15px; border: none; background: none; cursor: pointer; font-size: 18px; font-weight: bold;">+</button>
+    </div>
+    
+    <div style="text-align: right; min-width: 85px;">
+        <div style="font-weight: 800; color: #b38728; font-size: 15px;">₹${item.total.toLocaleString('en-IN')}</div>
+        <div ontouchstart="removeReviewItem('${key}', event)" onclick="removeReviewItem('${key}', event)" style="font-size: 11px; color: #ef4444; cursor: pointer; font-weight: 800; text-transform: uppercase; margin-top: 5px; padding: 5px;">Remove</div>
+    </div>
+`;
     }
 
     const totalSavings = grandTotalMRP - grandTotal;
@@ -1457,45 +1471,48 @@ function showCartReview() {
 
     modal.style.display = "flex";
 }
-function updateReviewQty(key, change) {
-    if (globalCart[key]) {
-        // 1. Update the quantity
-        globalCart[key].qty += change;
+function updateReviewQty(key, change, event) {
+    // Prevent mobile double-tap or background clicking
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
 
-        // 2. If it goes to 0, delete it
+    if (globalCart[key]) {
+        globalCart[key].qty += change;
         if (globalCart[key].qty <= 0) {
             delete globalCart[key];
         } else {
-            // 3. Recalculate total for this item
             globalCart[key].total = globalCart[key].qty * globalCart[key].price;
         }
-
-        // 4. Update the background UI (the Gold Bar and the list)
+        
+        // REFRESH BOTH
         refreshCartUI();
         showCartReview(); 
     }
 }
 
-function removeReviewItem(key) {
-    // 1. Remove from memory
-    delete globalCart[key];
+function removeReviewItem(key, event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
 
-    // 2. Uncheck the box in the background (if visible)
+    delete globalCart[key];
+    
+    // Sync checkboxes in the background
     const checkboxes = document.querySelectorAll('.row-select');
     checkboxes.forEach(cb => {
         const row = cb.closest('tr');
         if (row) {
             const size = row.querySelector('.row-spec-name').innerText.trim();
-            // If the key contains this size, uncheck it
             if (key.toLowerCase().includes(size.toLowerCase())) {
                 cb.checked = false;
-                // Update the row price in the modal background
                 row.querySelector('.row-final').innerText = '₹0';
             }
         }
     });
 
-    // 3. Refresh everything
     refreshCartUI();
     showCartReview();
 }
