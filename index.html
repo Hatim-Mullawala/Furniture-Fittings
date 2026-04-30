@@ -1107,21 +1107,38 @@ if (isBrackets) {
 
 html += `
 <tr ${rowVisibilityClass} style="border-bottom: 1px solid #f1f5f9; background: #fff;">
-    <td style="padding:12px 5px; text-align:center;">
-        <input type="checkbox" class="row-select" data-brand="${item.brand || ''}" data-finish="${color}" onchange="calculateOrderTotal(); syncModalToCart();" style="transform:scale(1.2);">
+    <!-- Column 1: Checkbox (Narrow) -->
+    <td style="padding:12px 2px; text-align:center; width:30px;">
+        <input type="checkbox" class="row-select" data-brand="${item.brand || ''}" data-finish="${color}" onchange="calculateOrderTotal(); syncModalToCart();" style="transform:scale(1.1);">
     </td>
-    <td style="padding:12px 5px;">
+    
+    <!-- Column 2: Image & Color (Wide) -->
+    <td style="padding:12px 5px; min-width:140px;">
         ${isBrackets ? bracketImgHTML : `<span style="font-weight:800; color:#334155;">${displayCol}</span>`}
     </td>
-    <td style="padding:12px 5px; color:#64748b; font-weight:600;" class="row-mrp" data-mrp="${price}">₹${price}</td>
-    <td style="padding:12px 5px;">
-        <input type="number" class="row-disc" value="0" oninput="calculateOrderTotal()" style="width:45px; text-align:center; border:1px solid #cbd5e1; border-radius:6px; padding:3px;"> %
+    
+    <!-- Column 3: MRP (Centered & Spaced) -->
+    <td style="padding:12px 8px; color:#64748b; font-weight:600; white-space:nowrap; text-align:center;" class="row-mrp" data-mrp="${price}">
+        ₹${price}
     </td>
-    <td style="padding:12px 5px; display:flex; align-items:center; gap:5px; justify-content:center;">
-        <input type="number" class="row-qty" value="1" oninput="calculateOrderTotal()" style="width: 40px; text-align: center; border: 1px solid #ccc; border-radius: 4px; padding:3px;">
-        <span style="font-size:10px; color:#94a3b8; font-weight:700;">pcs</span>
+    
+    <!-- Column 4: Discount -->
+    <td style="padding:12px 2px; text-align:center;">
+        <input type="number" class="row-disc" value="0" oninput="calculateOrderTotal()" style="width:35px; text-align:center; border:1px solid #cbd5e1; border-radius:4px; padding:3px; font-size:12px;"> %
     </td>
-    <td style="padding:12px 5px; text-align:right; font-weight:900; color:#b38728; font-size:15px;" class="row-final">₹0</td>
+    
+    <!-- Column 5: Qty -->
+    <td style="padding:12px 2px; text-align:center;">
+        <div style="display:flex; align-items:center; justify-content:center; gap:2px;">
+            <input type="number" class="row-qty" value="1" oninput="calculateOrderTotal()" style="width: 35px; text-align: center; border: 1px solid #ccc; border-radius: 4px; padding:3px; font-size:12px;">
+            <span style="font-size:9px; color:#94a3b8; font-weight:700;">pcs</span>
+        </div>
+    </td>
+    
+    <!-- Column 6: Final Price -->
+    <td style="padding:12px 5px; text-align:right; font-weight:900; color:#b38728; font-size:14px; white-space:nowrap;" class="row-final">
+        ₹0
+    </td>
 </tr>`;
             });
         });
