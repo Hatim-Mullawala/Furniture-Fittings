@@ -951,6 +951,8 @@ function openModal(nameInput, cat, param, isAutoHinge, series) {
 
         const isHandle = catLower.includes("handle");
         const isClean = catLower.includes("adhesive") || catLower.includes("nails") || catLower.includes("screws");
+        // Target the exact category name from your sheet
+const isBrackets = catLower.includes("brackets");
 
         document.getElementById('modal-title').innerText = seriesName ? `${seriesName} SERIES` : prodName;
         const subtitle = document.getElementById('modal-subtitle');
@@ -978,23 +980,35 @@ if (filterContainer) {
         let lastGroup = ""; 
         let lastProductName = ""; 
 
-        items.forEach((item) => {
-            const specsArray = String(item.specs || "").split(/[,，|]+/);
-            const pricesArray = String(item.mrp || "0").split(/[,，|]+/);
+       items.forEach((item) => {
+    const specsArray = String(item.specs || "").split(/[,，|]+/);
+    const pricesArray = String(item.mrp || "0").split(/[,，|]+/);
 
-            specsArray.forEach((fullSpec, idx) => {
-                const cleanSpec = fullSpec.trim();
-                if (!cleanSpec) return;
+    specsArray.forEach((fullSpec, idx) => {
+        const cleanSpec = fullSpec.trim();
+        if (!cleanSpec) return;
 
-                const price = parseFloat(pricesArray[idx] ? pricesArray[idx].trim().replace(/[₹\s,]/g,'') : pricesArray[0].trim().replace(/[₹\s,]/g,'')) || 0;
-                
-                let size = cleanSpec;
-                let color = "Standard";
-                if (isHandle && cleanSpec.includes("-")) {
-                    const parts = cleanSpec.split("-");
-                    size = parts[0].trim(); 
-                    color = parts.slice(1).join("-").trim(); 
-                }
+        const price = parseFloat(pricesArray[idx] ? pricesArray[idx].trim().replace(/[₹\s,]/g,'') : pricesArray[0].trim().replace(/[₹\s,]/g,'')) || 0;
+        
+       // --- COLOR DETECTION FOR BRACKETS ---
+let size = cleanSpec;
+let color = "Standard";
+
+if (isBrackets) {
+    if (cleanSpec.includes("-")) {
+        const parts = cleanSpec.split("-");
+        size = parts[0].trim(); 
+        color = parts.slice(1).join("-").trim();
+    } else {
+        // Since your specs are "A", "B", "C", we treat the spec as the color
+        color = cleanSpec; 
+        size = "Standard"; 
+    }
+} else if (isHandle && cleanSpec.includes("-")) {
+    const parts = cleanSpec.split("-");
+    size = parts[0].trim(); 
+    color = parts.slice(1).join("-").trim();
+}
 
                 const rowVisibilityClass = catLower.includes("kitchen trolley") ? `class="trolley-row" data-name="${item.name.toLowerCase()}"` : "";
 
@@ -1034,6 +1048,7 @@ if (filterContainer) {
                     setTimeout(() => { tryLoadImage(headerImgId, trolleyPaths, item.name); }, 50);
                     lastProductName = item.name;
                 }
+   
                 else if (isHandle && color !== lastGroup) {
                     const nClean = prodName.toLowerCase().trim().replace(/[,\s./_]+/g, '-');
                     const cClean = color.toLowerCase().trim().replace(/[,\s./_]+/g, '-');
@@ -1058,28 +1073,49 @@ if (filterContainer) {
                     lastGroup = color;
                 }
 
-                const displayCol = isAutoHinge ? item.brand : size;
+                // --- COMPACT ROW FOR BRACKETS ---
+const displayCol = isAutoHinge ? item.brand : size;
 
-                html += `
-                <tr ${rowVisibilityClass} style="border-bottom: 1px solid #f1f5f9;">
-                    <td style="padding:14px 5px; text-align:center;">
-                        <input type="checkbox" class="row-select" 
-       data-brand="${item.brand || ''}" 
-       data-finish="${color}" 
-       onchange="calculateOrderTotal(); syncModalToCart();" 
-       style="transform:scale(1.3); cursor:pointer;">
-                    </td>
-                    <td style="padding:14px 5px; font-weight:800; color:#334155; font-size:15px;" class="row-spec-name">${displayCol}</td>
-                    <td style="padding:14px 5px; color:#64748b; font-weight:600;" class="row-mrp" data-mrp="${price}">₹${price}</td>
-                    <td style="padding:14px 5px;">
-                        <input type="number" class="row-disc" value="0" oninput="calculateOrderTotal()" style="width:50px; text-align:center; border:1px solid #cbd5e1; border-radius:6px; padding:4px;"> %
-                    </td>
-                    <td style="padding:14px 5px; display:flex; align-items:center; gap:5px; justify-content:center;">
-                        <input type="number" class="row-qty" value="1" oninput="calculateOrderTotal()" style="width: 45px; text-align: center; border: 1px solid #ccc; border-radius: 4px; padding: 4px;">
-                        <span class="row-unit" style="font-size:11px; color:#94a3b8; font-weight:700;">pcs</span>
-                    </td>
-                    <td style="padding:14px 5px; text-align:right; font-weight:900; color:#b38728; font-size:16px;" class="row-final">₹0</td>
-                </tr>`;
+// Handle image generation ONLY for Brackets
+let bracketImgHTML = "";
+if (isBrackets) {
+    const nClean = prodName.toLowerCase().trim().replace(/[,\s./_]+/g, '-');
+    const cClean = color.toLowerCase().trim().replace(/[,\s./_]+/g, '-');
+    const bracketPaths = [`furniture-img/${nClean}-${cClean}.jpg`, `furniture-img/${nClean}-${cClean}.png` ];
+    const bracketImgId = `bracket-row-img-${Math.random().toString(36).substr(2, 5)}`;
+    
+    bracketImgHTML = `
+        <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:50px; height:40px; background:#fff; border:1px solid #eee; border-radius:6px; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;">
+                <img id="${bracketImgId}" src="https://placehold.co/50x40/f8fafc/b38728?text=..." style="max-width:100%; max-height:100%; object-fit:contain;">
+            </div>
+            <div style="text-align:left;">
+                <span style="display:block; font-size:14px; font-weight:800; color:#1e293b;">${color}</span>
+                <span style="display:block; font-size:10px; color:#b38728; font-weight:700; text-transform:uppercase;">COLOR</span>
+            </div>
+        </div>`;
+    
+    setTimeout(() => { tryLoadImage(bracketImgId, bracketPaths, `${prodName} ${color}`); }, 50);
+}
+
+html += `
+<tr ${rowVisibilityClass} style="border-bottom: 1px solid #f1f5f9; background: #fff;">
+    <td style="padding:12px 5px; text-align:center;">
+        <input type="checkbox" class="row-select" data-brand="${item.brand || ''}" data-finish="${color}" onchange="calculateOrderTotal(); syncModalToCart();" style="transform:scale(1.2);">
+    </td>
+    <td style="padding:12px 5px;">
+        ${isBrackets ? bracketImgHTML : `<span style="font-weight:800; color:#334155;">${displayCol}</span>`}
+    </td>
+    <td style="padding:12px 5px; color:#64748b; font-weight:600;" class="row-mrp" data-mrp="${price}">₹${price}</td>
+    <td style="padding:12px 5px;">
+        <input type="number" class="row-disc" value="0" oninput="calculateOrderTotal()" style="width:45px; text-align:center; border:1px solid #cbd5e1; border-radius:6px; padding:3px;"> %
+    </td>
+    <td style="padding:12px 5px; display:flex; align-items:center; gap:5px; justify-content:center;">
+        <input type="number" class="row-qty" value="1" oninput="calculateOrderTotal()" style="width: 40px; text-align: center; border: 1px solid #ccc; border-radius: 4px; padding:3px;">
+        <span style="font-size:10px; color:#94a3b8; font-weight:700;">pcs</span>
+    </td>
+    <td style="padding:12px 5px; text-align:right; font-weight:900; color:#b38728; font-size:15px;" class="row-final">₹0</td>
+</tr>`;
             });
         });
 
