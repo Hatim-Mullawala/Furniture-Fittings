@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- PWA Meta Tags -->
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Hatimi Hardware">
+<meta name="theme-color" content="#b38728">
+<link rel="apple-touch-icon" href="logo-192.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
@@ -1697,5 +1704,38 @@ loadFurnitureData();
 .review-item-details { display: flex; flex-direction: column; gap: 4px; }
 </style>
 <script src="hatimi-bot.js"></script>  
+<script>
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  // Prevent Chrome 67 and earlier from automatically showing the prompt
+  e.preventDefault();
+  // Stash the event so it can be triggered later.
+  deferredPrompt = e;
+  
+  // OPTIONAL: Show a small gold "Install App" button in your UI
+  console.log('App is ready to be added to home screen');
+});
+
+// To trigger the install manually (e.g., from a settings button)
+function installHatimiApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        console.log('User accepted the Hatimi Hardware install');
+      }
+      deferredPrompt = null;
+    });
+  }
+}
+
+// Basic Service Worker registration (Required for Add to Home Screen)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW failed', err));
+  });
+}
+</script>
 </body>
 </html>
