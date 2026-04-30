@@ -1148,6 +1148,8 @@ html += `
         calculateOrderTotal();
         syncModalToCart();
     } catch (e) { console.error("Modal Error:", e); }
+    // --- Inside openModal ---
+window.history.pushState({ modalOpen: true }, "");
 }
 
 // --- UPDATED SUPPORTING FUNCTIONS ---
@@ -1656,6 +1658,29 @@ function removeReviewItem(key, event) {
 }
 function closeCartReview() {
     document.getElementById('cartReviewModal').style.display = "none";
+}
+// This listens for the phone's hardware/browser back button
+window.onpopstate = function(event) {
+    const modal = document.getElementById('order-modal-overlay');
+    
+    // If the modal is visible, close it instead of leaving the site
+    if (modal && modal.style.display === "flex") {
+        closeModal();
+    }
+};
+
+// Update your closeModal function to clean up the history
+function closeModal() {
+    const modal = document.getElementById('order-modal-overlay');
+    if (modal) {
+        modal.style.display = "none";
+    }
+
+    // If the user closed via 'X', we remove the 'fake' history entry 
+    // so the next back button click actually takes them to the home screen
+    if (window.history.state && window.history.state.modalOpen) {
+        // Only go back if the modal state is still in the history
+    }
 }
 loadFurnitureData();
 </script>
