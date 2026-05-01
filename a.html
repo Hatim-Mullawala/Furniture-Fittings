@@ -1142,14 +1142,19 @@ if (isBrackets) {
     setTimeout(() => { tryLoadImage(bracketImgId, bracketPaths, `${prodName} ${color}`); }, 50);
 }
 
+// --- NEW: Sanitize the data so inches (") don't break the HTML ---
+const safeBrand = String(item.brand || 'Hatimi').replace(/"/g, '&quot;');
+const safeName = String(prodName || item.name).replace(/"/g, '&quot;');
+const safeSpec = String(`${size} ${color !== 'Standard' ? '- ' + color : ''}`).trim().replace(/"/g, '&quot;');
+
 html += `
 <tr ${rowVisibilityClass} style="border-bottom: 1px solid #f1f5f9; background: #fff;">
     <!-- Column 1: Checkbox -->
     <td style="padding:12px 2px; text-align:center; width:30px;">
         <input type="checkbox" class="row-select" 
-               data-brand="${item.brand || 'Hatimi'}" 
-               data-itemname="${prodName || item.name}" 
-               data-spec="${size} ${color !== 'Standard' ? '- ' + color : ''}" 
+               data-brand="${safeBrand}" 
+               data-itemname="${safeName}" 
+               data-spec="${safeSpec}" 
                onchange="calculateOrderTotal();" 
                style="transform:scale(1.1); cursor:pointer;">
     </td>
@@ -1676,12 +1681,15 @@ function showCartReview() {
         </div>
     `;
 
-    // --- 2. RESTORE YOUR SCROLL POSITION ---
+   // --- RESTORE YOUR SCROLL POSITION ---
     const newScrollArea = modal.querySelector('.review-scroll-area');
     if (newScrollArea) {
         newScrollArea.scrollTop = currentScroll;
     }
 
+    // --- NEW: Tell the phone's back button a new window opened ---
+    window.history.pushState({ cartOpen: true }, "");
+    
     modal.style.display = "flex";
 }
 function updateReviewQty(key, change, event) {
@@ -1741,9 +1749,18 @@ function closeCartReview() {
     document.getElementById('cartReviewModal').style.display = "none";
 }
 window.onpopstate = function(event) {
-    const modal = document.getElementById('order-modal-overlay');
-    if (modal && modal.style.display === "flex") {
-        modal.style.display = "none";
+    const reviewModal = document.getElementById('cartReviewModal');
+    const productModal = document.getElementById('order-modal-overlay');
+
+    // 1. If the "Review Order" list is open, close it FIRST
+    if (reviewModal && reviewModal.style.display === "flex") {
+        closeCartReview();
+        return; // Stop here so we don't accidentally close the product modal underneath
+    }
+
+    // 2. If the "View Sizes" product modal is open, close that
+    if (productModal && productModal.style.display === "flex") {
+        productModal.style.display = "none";
         refreshGlobalCart();
     }
 };
