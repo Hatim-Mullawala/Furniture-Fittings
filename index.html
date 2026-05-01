@@ -1749,20 +1749,37 @@ function removeReviewItem(key, event) {
 function closeCartReview() {
     document.getElementById('cartReviewModal').style.display = "none";
 }
+// --- UPDATED HARDWARE BACK BUTTON LOGIC ---
 window.onpopstate = function(event) {
     const reviewModal = document.getElementById('cartReviewModal');
     const productModal = document.getElementById('order-modal-overlay');
+    const tarsWidget = document.getElementById('tars-widget-container');
 
-    // 1. If the "Review Order" list is open, close it FIRST
+    // 1. If Review List is open, close it FIRST
     if (reviewModal && reviewModal.style.display === "flex") {
         closeCartReview();
-        return; // Stop here so we don't accidentally close the product modal underneath
+        return;
     }
 
-    // 2. If the "View Sizes" product modal is open, close that
+    // 2. If Product Modal is open, close it NEXT
     if (productModal && productModal.style.display === "flex") {
         productModal.style.display = "none";
         refreshGlobalCart();
+        return;
+    }
+
+    // 3. If Chatbot is open, close it!
+    if (tarsWidget && tarsWidget.clientHeight > 100) {
+        // TARS uses the FAB (floating button) to toggle the bot open and closed.
+        // We simulate a physical click on it so it animates closed gracefully.
+        const botCloseBtn = document.querySelector('#tars-widget-fab, .tars-fab');
+        if (botCloseBtn) {
+            botCloseBtn.click();
+        } else {
+            // Fallback: forcefully hide it if the button isn't found
+            tarsWidget.style.display = 'none';
+            setTimeout(() => { tarsWidget.style.display = 'block'; }, 500); // Reset for future clicks
+        }
     }
 };
 
@@ -1781,6 +1798,28 @@ function closeModal() {
     // Final refresh to turn on the Gold Bar
     refreshGlobalCart();
 }
+// --- CHATBOT WATCHER: Prevents app from exiting when bot opens ---
+document.addEventListener('DOMContentLoaded', () => {
+    const botObserver = new MutationObserver(() => {
+        const tars = document.getElementById('tars-widget-container');
+        // If the bot expands to take up the screen, we know it opened
+        if (tars && tars.clientHeight > 100) {
+            // Tell the browser history the bot is open so the back button stays active
+            if (!window.history.state || !window.history.state.botOpen) {
+                window.history.pushState({ botOpen: true }, "");
+            }
+        }
+    });
+    
+    // Wait for the external TARS script to load, then start watching it
+    const checkBotInterval = setInterval(() => {
+        const tars = document.getElementById('tars-widget-container');
+        if (tars) {
+            botObserver.observe(tars, { attributes: true, attributeFilter: ['style', 'class'] });
+            clearInterval(checkBotInterval);
+        }
+    }, 1000);
+});
 loadFurnitureData();
 </script>
 
