@@ -680,7 +680,7 @@
         <div style="background:#fff9eb; border:1px dashed #d4af37; padding:15px; border-radius:8px; margin-bottom:20px; display:flex; justify-content:center; align-items:center; gap:10px; font-weight:bold; color:#333;">
             Set Unit for All:
             <select id="bulk-unit" style="padding:6px 15px; border:1px solid #333; border-radius:4px;" onchange="applyBulkUnit()">
-                <option value="pcs">pcs</option><option value="box">box</option><option value="kg">kg</option>
+                <option value="pcs">pcs</option><option value="box">box</option><option value="kg">kg</option><option value="sets">sets</option>
             </select>
         </div>
 <div id="modal-filter-container"></div>
@@ -1178,7 +1178,8 @@ html += `
     <td style="padding:12px 2px; text-align:center;">
         <div style="display:flex; align-items:center; justify-content:center; gap:2px;">
             <input type="number" class="row-qty" value="1" oninput="calculateOrderTotal()" style="width: 35px; text-align: center; border: 1px solid #ccc; border-radius: 4px; padding:3px; font-size:12px;">
-            <span style="font-size:9px; color:#94a3b8; font-weight:700;">pcs</span>
+            <span class="row-unit" style="font-size:9px; color:#94a3b8; font-weight:700;">pcs</span>
+            
         </div>
     </td>
     
