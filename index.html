@@ -581,13 +581,9 @@
     bottom: 0;
     left: 0;
     width: 100%;
-    background: #b38728; /* Hatimi Gold */
-    z-index: 9999;
-    padding: 10px 15px;
-    /* This ensures it accounts for the "Safe Area" on iPhones/Android */
-    padding-bottom: env(safe-area-inset-bottom, 15px); 
-    box-shadow: 0 -4px 15px rgba(0,0,0,0.15);
-    display: none; /* Shown by JS when items are added */
+    z-index: 10001; /* Must be higher than the modal overlay */
+    background: #b38728;
+    padding-bottom: env(safe-area-inset-bottom, 10px);
 }
     </style>
 </head>
@@ -1154,14 +1150,13 @@ html += `
 </tr>`;
             });
         });
-
+        window.history.pushState({ modalOpen: true }, "");
         document.getElementById('modal-table-body').innerHTML = html;
         document.getElementById('order-modal-overlay').style.display = "flex"; 
         calculateOrderTotal();
         syncModalToCart();
     } catch (e) { console.error("Modal Error:", e); }
-    // --- Inside openModal ---
-window.history.pushState({ modalOpen: true }, "");
+
 }
 
 // --- UPDATED SUPPORTING FUNCTIONS ---
@@ -1381,27 +1376,29 @@ function filterCategoryCards(filterType, btn) {
 let globalCart = {};
 
 function syncModalToCart() {
-    // 1. Calculate totals first
-    calculateOrderTotal();
+    // Force recalculation
+    if (typeof calculateOrderTotal === "function") {
+        calculateOrderTotal();
+    }
 
-    // 2. Use a timeout to ensure mobile browser finishes processing inputs
-    setTimeout(() => {
-        const modalTotal = document.getElementById('modal-total-amount')?.innerText || "₹0";
-        const globalCartTotal = document.getElementById('cart-total-amount');
-        const globalCartBar = document.getElementById('gold-cart-bar');
+    const modalTotalText = document.getElementById('modal-total-amount')?.innerText || "₹0";
+    const totalValue = parseFloat(modalTotalText.replace(/[₹,]/g, '')) || 0;
+    
+    const globalCartBar = document.getElementById('gold-cart-bar');
+    const globalTotalDisplay = document.getElementById('cart-total-amount');
 
-        if (globalCartTotal) {
-            globalCartTotal.innerText = modalTotal;
+    if (globalTotalDisplay) {
+        globalTotalDisplay.innerText = modalTotalText;
+    }
+
+    if (globalCartBar) {
+        if (totalValue > 0) {
+            // Force flex and high z-index for mobile
+            globalCartBar.setAttribute('style', 'display: flex !important; bottom: 0px !important;');
+        } else {
+            globalCartBar.style.display = "none";
         }
-
-        // 3. Force show the bar if total > 0
-        if (parseFloat(modalTotal.replace(/[₹,]/g, '')) > 0) {
-            if (globalCartBar) {
-                globalCartBar.style.display = "flex";
-                globalCartBar.style.bottom = "0px"; // Ensure it's visible
-            }
-        }
-    }, 100);
+    }
 }
 function refreshCartUI() {
     const cartBar = document.getElementById('globalCartBar');
@@ -1652,10 +1649,10 @@ function closeCartReview() {
 }
 window.onpopstate = function(event) {
     const modal = document.getElementById('order-modal-overlay');
+    // If the modal is open, close it and prevent the page from leaving
     if (modal && modal.style.display === "flex") {
-        // Before closing, sync the cart one last time
-        syncModalToCart(); 
-        closeModal();
+        modal.style.display = "none";
+        syncModalToCart(); // Make sure cart updates when using phone's back button
     }
 };
 
@@ -1670,7 +1667,9 @@ function closeModal() {
     // so the next back button click actually takes them to the home screen
     if (window.history.state && window.history.state.modalOpen) {
         // Only go back if the modal state is still in the history
+        window.history.back();
     }
+    syncModalToCart();
 }
 loadFurnitureData();
 </script>
