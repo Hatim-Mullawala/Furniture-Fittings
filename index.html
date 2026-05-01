@@ -1749,36 +1749,55 @@ function removeReviewItem(key, event) {
 function closeCartReview() {
     document.getElementById('cartReviewModal').style.display = "none";
 }
-// --- 2. UPDATED HARDWARE BACK BUTTON LOGIC ---
-window.onpopstate = function(event) {
-    const reviewModal = document.getElementById('cartReviewModal');
-    const productModal = document.getElementById('order-modal-overlay');
-    const tarsWidget = document.getElementById('tars-widget-container');
+// --- 1. DIRECT TAP INTERCEPTOR FOR CHATBOT ---
+// This listens for your physical tap on the chatbot button
+document.addEventListener('click', function(event) {
+    const isBotButton = event.target.closest('#tars-widget-fab, .tars-fab');
+    if (isBotButton) {
+        // Wait half a second for the bot's opening animation, then push the history state
+        setTimeout(() => {
+            const tarsWidget = document.getElementById('tars-widget-container');
+            if (tarsWidget && tarsWidget.clientHeight > 100) {
+                // This forces Android to register a new page
+                window.history.pushState({ botOpen: true }, "", "#chatbot");
+            }
+        }, 500); 
+    }
+});
 
-    // 1. Check if Chatbot is open FIRST. If we hit back, close it!
-    if (isBotOpen && tarsWidget && tarsWidget.clientHeight > 100) {
-        // Find the TARS floating button and "click" it to close the bot
+// --- 2. THE MASTER BACK BUTTON CONTROLLER ---
+// Use addEventListener so it doesn't get overwritten by other scripts
+window.addEventListener('popstate', function(event) {
+    const tarsWidget = document.getElementById('tars-widget-container');
+    
+    // A. Check if the bot is currently open FIRST
+    if (tarsWidget && tarsWidget.clientHeight > 100) {
+        // Find the bot's button and simulate a tap to close it gracefully
         const botCloseBtn = document.querySelector('#tars-widget-fab, .tars-fab');
         if (botCloseBtn) {
-            botCloseBtn.click();
+            botCloseBtn.click(); 
+        } else {
+            // Emergency fallback if the button isn't found
+            tarsWidget.style.display = 'none';
         }
-        isBotOpen = false;
-        return; // Stop here so it doesn't close the cart behind it!
+        return; // STOP HERE so we don't accidentally close the cart behind it!
     }
 
-    // 2. If Review List is open, close it NEXT
+    // B. Check the Review Order List NEXT
+    const reviewModal = document.getElementById('cartReviewModal');
     if (reviewModal && reviewModal.style.display === "flex") {
-        closeCartReview();
+        if (typeof closeCartReview === "function") closeCartReview();
         return;
     }
 
-    // 3. If Product Modal is open, close it LAST
+    // C. Check the Product Size Modal LAST
+    const productModal = document.getElementById('order-modal-overlay');
     if (productModal && productModal.style.display === "flex") {
         productModal.style.display = "none";
-        refreshGlobalCart();
+        if (typeof refreshGlobalCart === "function") refreshGlobalCart();
         return;
     }
-};
+});
 
 // --- 3. CLOSE MODAL ---
 function closeModal() {
