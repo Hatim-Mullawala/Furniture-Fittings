@@ -576,7 +576,19 @@
     border-bottom: 1px solid #f1f5f9;
     padding: 16px 20px;
 }
-
+#gold-cart-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #b38728; /* Hatimi Gold */
+    z-index: 9999;
+    padding: 10px 15px;
+    /* This ensures it accounts for the "Safe Area" on iPhones/Android */
+    padding-bottom: env(safe-area-inset-bottom, 15px); 
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.15);
+    display: none; /* Shown by JS when items are added */
+}
     </style>
 </head>
     <body>
@@ -1369,48 +1381,27 @@ function filterCategoryCards(filterType, btn) {
 let globalCart = {};
 
 function syncModalToCart() {
-    const titleEl = document.getElementById('modal-title');
-    const seriesTitle = titleEl ? titleEl.innerText : "Standard";
+    // 1. Calculate totals first
+    calculateOrderTotal();
 
-    const rows = document.querySelectorAll('#modal-table-body tr');
-    
-    rows.forEach(row => {
-        const checkbox = row.querySelector('.row-select');
-        const qtyInput = row.querySelector('.row-qty');
-        
-        if (checkbox && qtyInput) {
-            const size = row.querySelector('.row-spec-name').innerText.trim();
-            const basketName = row.getAttribute('data-name') || "Item";
-            const brand = checkbox.getAttribute('data-brand') || "";
-            const finish = checkbox.getAttribute('data-finish') || "";
-            
-            const mrp = parseFloat(row.querySelector('.row-mrp').getAttribute('data-mrp')) || 0;
-            const disc = parseFloat(row.querySelector('.row-disc').value) || 0;
-            const qty = parseInt(qtyInput.value) || 0;
-            
-            const finalPrice = Math.round(mrp * (1 - (disc / 100)));
-            
-            // Generate a truly unique key
-            const itemKey = `${seriesTitle}|${basketName}|${size}|${finish}`.toLowerCase();
+    // 2. Use a timeout to ensure mobile browser finishes processing inputs
+    setTimeout(() => {
+        const modalTotal = document.getElementById('modal-total-amount')?.innerText || "₹0";
+        const globalCartTotal = document.getElementById('cart-total-amount');
+        const globalCartBar = document.getElementById('gold-cart-bar');
 
-            if (checkbox.checked && qty > 0) {
-                globalCart[itemKey] = {
-                    name: `${seriesTitle} ${basketName}`,
-                    brand: brand,
-                    size: size,
-                    finish: finish,
-                    price: finalPrice,
-                    mrpPerUnit: mrp,
-                    qty: qty,
-                    total: finalPrice * qty
-                };
-            } else {
-                delete globalCart[itemKey];
+        if (globalCartTotal) {
+            globalCartTotal.innerText = modalTotal;
+        }
+
+        // 3. Force show the bar if total > 0
+        if (parseFloat(modalTotal.replace(/[₹,]/g, '')) > 0) {
+            if (globalCartBar) {
+                globalCartBar.style.display = "flex";
+                globalCartBar.style.bottom = "0px"; // Ensure it's visible
             }
         }
-    });
-    
-    refreshCartUI();
+    }, 100);
 }
 function refreshCartUI() {
     const cartBar = document.getElementById('globalCartBar');
@@ -1659,12 +1650,11 @@ function removeReviewItem(key, event) {
 function closeCartReview() {
     document.getElementById('cartReviewModal').style.display = "none";
 }
-// This listens for the phone's hardware/browser back button
 window.onpopstate = function(event) {
     const modal = document.getElementById('order-modal-overlay');
-    
-    // If the modal is visible, close it instead of leaving the site
     if (modal && modal.style.display === "flex") {
+        // Before closing, sync the cart one last time
+        syncModalToCart(); 
         closeModal();
     }
 };
