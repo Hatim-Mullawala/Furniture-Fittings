@@ -1190,7 +1190,7 @@ html += `
 </tr>`;
             });
         });
-        window.history.pushState({ modalOpen: true }, "");
+        window.history.pushState({ type: 'product' }, "product");
         document.getElementById('modal-table-body').innerHTML = html;
         document.getElementById('order-modal-overlay').style.display = "flex"; 
 
@@ -1689,7 +1689,7 @@ function showCartReview() {
     }
 
     // --- NEW: Tell the phone's back button a new window opened ---
-    window.history.pushState({ cartOpen: true }, "");
+    window.history.pushState({ type: 'review' }, "review");
     
     modal.style.display = "flex";
 }
@@ -1749,98 +1749,57 @@ function removeReviewItem(key, event) {
 function closeCartReview() {
     document.getElementById('cartReviewModal').style.display = "none";
 }
-// --- 1. DIRECT TAP INTERCEPTOR FOR CHATBOT ---
-// This listens for your physical tap on the chatbot button
-document.addEventListener('click', function(event) {
-    const isBotButton = event.target.closest('#tars-widget-fab, .tars-fab');
-    if (isBotButton) {
-        // Wait half a second for the bot's opening animation, then push the history state
-        setTimeout(() => {
-            const tarsWidget = document.getElementById('tars-widget-container');
-            if (tarsWidget && tarsWidget.clientHeight > 100) {
-                // This forces Android to register a new page
-                window.history.pushState({ botOpen: true }, "", "#chatbot");
-            }
-        }, 500); 
-    }
-});
+// --- MASTER BACK BUTTON CONTROLLER ---
 
-// --- 2. THE MASTER BACK BUTTON CONTROLLER ---
-// Use addEventListener so it doesn't get overwritten by other scripts
-window.addEventListener('popstate', function(event) {
+// 1. We keep a simple flag to track the bot's state
+let isBotOpen = false;
+
+// 2. We watch the bot for changes.
+setInterval(function() {
     const tarsWidget = document.getElementById('tars-widget-container');
-    
-    // A. Check if the bot is currently open FIRST
     if (tarsWidget && tarsWidget.clientHeight > 100) {
-        // Find the bot's button and simulate a tap to close it gracefully
-        const botCloseBtn = document.querySelector('#tars-widget-fab, .tars-fab');
-        if (botCloseBtn) {
-            botCloseBtn.click(); 
-        } else {
-            // Emergency fallback if the button isn't found
-            tarsWidget.style.display = 'none';
+        if (!isBotOpen) {
+            isBotOpen = true;
+            // Push state only ONCE when the bot opens
+            window.history.pushState({ type: 'bot' }, "bot");
         }
-        return; // STOP HERE so we don't accidentally close the cart behind it!
+    } else {
+        isBotOpen = false;
+    }
+}, 300);
+
+// 3. The definitive 'popstate' listener
+window.addEventListener('popstate', function(event) {
+    // Layer A: Is the bot open?
+    if (isBotOpen) {
+        const tarsFab = document.querySelector('#tars-widget-fab, .tars-fab');
+        if (tarsFab) {
+            tarsFab.click(); // Close bot
+        } else {
+            const tarsWidget = document.getElementById('tars-widget-container');
+            if(tarsWidget) tarsWidget.style.display = "none";
+        }
+        isBotOpen = false;
+        return; // Stop executing so we don't exit the app
     }
 
-    // B. Check the Review Order List NEXT
+    // Layer B: Is the Review Cart open?
     const reviewModal = document.getElementById('cartReviewModal');
     if (reviewModal && reviewModal.style.display === "flex") {
-        if (typeof closeCartReview === "function") closeCartReview();
+        if (typeof closeCartReview === "function") {
+            reviewModal.style.display = "none";
+            refreshGlobalCart();
+        }
         return;
     }
 
-    // C. Check the Product Size Modal LAST
+    // Layer C: Is the Product Details modal open?
     const productModal = document.getElementById('order-modal-overlay');
     if (productModal && productModal.style.display === "flex") {
         productModal.style.display = "none";
-        if (typeof refreshGlobalCart === "function") refreshGlobalCart();
+        refreshGlobalCart();
         return;
     }
-});
-
-// --- 3. CLOSE MODAL ---
-function closeModal() {
-    const modal = document.getElementById('order-modal-overlay');
-    if (modal) {
-        modal.style.display = "none";
-    }
-    
-    // Only go back in history if we are actually in a modal state
-    if (window.history.state && window.history.state.modalOpen) {
-        window.history.back();
-    }
-
-    // Final refresh to turn on the Gold Bar
-    refreshGlobalCart();
-}
-// --- 1. BULLETPROOF CHATBOT WATCHER ---
-let isBotOpen = false;
-
-document.addEventListener('DOMContentLoaded', () => {
-    const botObserver = new MutationObserver(() => {
-        const tars = document.getElementById('tars-widget-container');
-        if (tars) {
-            // If bot expands (opens), mark it open and add #chatbot to URL
-            if (tars.clientHeight > 100 && !isBotOpen) {
-                isBotOpen = true;
-                window.history.pushState({ bot: true }, "", "#chatbot");
-            } 
-            // If user closes it manually using the 'X', mark it closed
-            else if (tars.clientHeight <= 100 && isBotOpen) {
-                isBotOpen = false;
-            }
-        }
-    });
-    
-    // Wait for the bot to load, then watch it
-    const checkBotInterval = setInterval(() => {
-        const tars = document.getElementById('tars-widget-container');
-        if (tars) {
-            botObserver.observe(tars, { attributes: true, attributeFilter: ['style', 'class'] });
-            clearInterval(checkBotInterval);
-        }
-    }, 1000);
 });
 loadFurnitureData();
 </script>
