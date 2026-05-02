@@ -993,7 +993,7 @@ function openModal(nameInput, cat, param, isAutoHinge, series) {
             </div>`;
         }
 
-        const isHandle = catLower.includes("handle");
+        const isHandle = catLower.includes("handle") || catLower.includes("leg");
         const isClean = catLower.includes("adhesive") || catLower.includes("nails") || catLower.includes("screws");
         // Target the exact category name from your sheet
 const isBrackets = catLower.includes("brackets");
