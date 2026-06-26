@@ -993,7 +993,7 @@ function openModal(nameInput, cat, param, isAutoHinge, series) {
             </div>`;
         }
 
-        const isHandle = catLower.includes("handle");
+        const isHandle = catLower.includes("handle") || catLower.includes("leg");
         const isClean = catLower.includes("adhesive") || catLower.includes("nails") || catLower.includes("screws");
         // Target the exact category name from your sheet
 const isBrackets = catLower.includes("brackets");
@@ -1190,7 +1190,7 @@ html += `
 </tr>`;
             });
         });
-        window.history.pushState({ modalOpen: true }, "");
+        window.history.pushState({ type: 'product' }, "product");
         document.getElementById('modal-table-body').innerHTML = html;
         document.getElementById('order-modal-overlay').style.display = "flex"; 
 
@@ -1689,7 +1689,7 @@ function showCartReview() {
     }
 
     // --- NEW: Tell the phone's back button a new window opened ---
-    window.history.pushState({ cartOpen: true }, "");
+    window.history.pushState({ type: 'review' }, "review");
     
     modal.style.display = "flex";
 }
@@ -1749,76 +1749,57 @@ function removeReviewItem(key, event) {
 function closeCartReview() {
     document.getElementById('cartReviewModal').style.display = "none";
 }
-// --- UPDATED HARDWARE BACK BUTTON LOGIC ---
-window.onpopstate = function(event) {
-    const reviewModal = document.getElementById('cartReviewModal');
-    const productModal = document.getElementById('order-modal-overlay');
-    const tarsWidget = document.getElementById('tars-widget-container');
+// --- MASTER BACK BUTTON CONTROLLER ---
 
-    // 1. If Review List is open, close it FIRST
+// 1. We keep a simple flag to track the bot's state
+let isBotOpen = false;
+
+// 2. We watch the bot for changes.
+setInterval(function() {
+    const tarsWidget = document.getElementById('tars-widget-container');
+    if (tarsWidget && tarsWidget.clientHeight > 100) {
+        if (!isBotOpen) {
+            isBotOpen = true;
+            // Push state only ONCE when the bot opens
+            window.history.pushState({ type: 'bot' }, "bot");
+        }
+    } else {
+        isBotOpen = false;
+    }
+}, 300);
+
+// 3. The definitive 'popstate' listener
+window.addEventListener('popstate', function(event) {
+    // Layer A: Is the bot open?
+    if (isBotOpen) {
+        const tarsFab = document.querySelector('#tars-widget-fab, .tars-fab');
+        if (tarsFab) {
+            tarsFab.click(); // Close bot
+        } else {
+            const tarsWidget = document.getElementById('tars-widget-container');
+            if(tarsWidget) tarsWidget.style.display = "none";
+        }
+        isBotOpen = false;
+        return; // Stop executing so we don't exit the app
+    }
+
+    // Layer B: Is the Review Cart open?
+    const reviewModal = document.getElementById('cartReviewModal');
     if (reviewModal && reviewModal.style.display === "flex") {
-        closeCartReview();
+        if (typeof closeCartReview === "function") {
+            reviewModal.style.display = "none";
+            refreshGlobalCart();
+        }
         return;
     }
 
-    // 2. If Product Modal is open, close it NEXT
+    // Layer C: Is the Product Details modal open?
+    const productModal = document.getElementById('order-modal-overlay');
     if (productModal && productModal.style.display === "flex") {
         productModal.style.display = "none";
         refreshGlobalCart();
         return;
     }
-
-    // 3. If Chatbot is open, close it!
-    if (tarsWidget && tarsWidget.clientHeight > 100) {
-        // TARS uses the FAB (floating button) to toggle the bot open and closed.
-        // We simulate a physical click on it so it animates closed gracefully.
-        const botCloseBtn = document.querySelector('#tars-widget-fab, .tars-fab');
-        if (botCloseBtn) {
-            botCloseBtn.click();
-        } else {
-            // Fallback: forcefully hide it if the button isn't found
-            tarsWidget.style.display = 'none';
-            setTimeout(() => { tarsWidget.style.display = 'block'; }, 500); // Reset for future clicks
-        }
-    }
-};
-
-// --- 3. CLOSE MODAL ---
-function closeModal() {
-    const modal = document.getElementById('order-modal-overlay');
-    if (modal) {
-        modal.style.display = "none";
-    }
-    
-    // Only go back in history if we are actually in a modal state
-    if (window.history.state && window.history.state.modalOpen) {
-        window.history.back();
-    }
-
-    // Final refresh to turn on the Gold Bar
-    refreshGlobalCart();
-}
-// --- CHATBOT WATCHER: Prevents app from exiting when bot opens ---
-document.addEventListener('DOMContentLoaded', () => {
-    const botObserver = new MutationObserver(() => {
-        const tars = document.getElementById('tars-widget-container');
-        // If the bot expands to take up the screen, we know it opened
-        if (tars && tars.clientHeight > 100) {
-            // Tell the browser history the bot is open so the back button stays active
-            if (!window.history.state || !window.history.state.botOpen) {
-                window.history.pushState({ botOpen: true }, "");
-            }
-        }
-    });
-    
-    // Wait for the external TARS script to load, then start watching it
-    const checkBotInterval = setInterval(() => {
-        const tars = document.getElementById('tars-widget-container');
-        if (tars) {
-            botObserver.observe(tars, { attributes: true, attributeFilter: ['style', 'class'] });
-            clearInterval(checkBotInterval);
-        }
-    }, 1000);
 });
 loadFurnitureData();
 </script>
